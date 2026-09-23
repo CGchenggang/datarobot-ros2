@@ -82,6 +82,11 @@ def generate_launch_description():
         name="ros_gz_bridge",
         output="screen",
         arguments=[
+            # /clock 必须桥接！use_sim_time=true 的节点全靠它走时钟。
+            # 不桥接的话 ROS 侧仿真时间永远停在 0，slam_toolbox 因为只用消息
+            # 时间戳查 TF 而"恰好"能工作，但 Nav2 充满定时器（控制器频率、
+            # 代价地图更新、行为树 tick）—— 时钟不走 = 定时器不触发 = 机器人不动
+            "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock",
             "/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist",
             "/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry",
             "/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model",
