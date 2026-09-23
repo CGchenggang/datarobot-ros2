@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="databot">
+<!-- 基础部分 -->
+<xacro:include filename="$(find datarobot_description)/urdf/databot/base.urdf.xacro"/>
+<!-- 传感器部分 -->
+<xacro:include filename="$(find datarobot_description)/urdf/databot/senser/imu.urdf.xacro"/>
+<xacro:include filename="$(find datarobot_description)/urdf/databot/senser/camera.urdf.xacro"/>
+<xacro:include filename="$(find datarobot_description)/urdf/databot/senser/laser.urdf.xacro"/>
+<!-- 执行器部分 -->
+<xacro:include filename="$(find datarobot_description)/urdf/databot/actuator/wheel.urdf.xacro"/>
+<xacro:include filename="$(find datarobot_description)/urdf/databot/actuator/caster.urdf.xacro"/>
+<!-- Gazebo 仿真配置 -->
+<xacro:include filename="$(find datarobot_description)/urdf/databot/gazebo.urdf.xacro"/>
+
+<!-- 轮子几何在此统一定义, base 与 wheel 共用, 避免两处不一致导致模型悬空或陷地 -->
+<xacro:property name="wheel_radius" value="0.083"/>
+<xacro:property name="wheel_z" value="-0.17"/>
+
+<!-- 地平面: base_link 高出地面的高度. 只在这里算一次, 再传给 base_xacro 和
+     caster_xacro, 保证"地面在哪"只有一个真值来源 -->
+<xacro:property name="base_height" value="${-wheel_z + wheel_radius}"/>
+
+<!-- 从动轮半径. 与 wheel_radius 解耦: 只要关节 z 按
+     (caster_radius - base_height) 推导, 半径取任何值都能触地,
+     不必等于驱动轮半径 -->
+<xacro:property name="caster_radius" value="0.083"/>
+
+<xacro:base_xacro length="1.70" radius="0.28" base_height="${base_height}"/>
+<xacro:imu_xacro xyz="0.0 0.0 0.02"/>
+<xacro:camera_xacro xyz="0.0 0.0 1.566"/>
+<xacro:laser_xacro xyz="0.30 0.0 0.0"/>
+
+<xacro:wheel_xacro wheel_name="left_wheel"
+                   xyz="0 0.179 ${wheel_z}" radius="${wheel_radius}"/>
+<xacro:wheel_xacro wheel_name="right_wheel"
+                   xyz="0 -0.179 ${wheel_z}" radius="${wheel_radius}"/>
+
+<!-- 从动轮(前后支撑). z 由宏内部按 caster_radius - base_height 推导, 这里只给
+     平面位置 xy. 前后必须传同样的参数, 否则两个轮子不落同一地平面 -->
+<xacro:caster_xacro caster_name="front_caster"
+                    xy="0.20 0.0"
+                    caster_radius="${caster_radius}" base_height="${base_height}"/>
+<xacro:caster_xacro caster_name="rear_caster"
+                    xy="-0.20 0.0"
+                    caster_radius="${caster_radius}" base_height="${base_height}"/>
+
+<!-- 调用 Gazebo 配置宏（仅在仿真时使用）-->
+<xacro:gazebo_diff_drive/>
+    <xacro:gazebo_joint_state_publisher/>
+
+</robot>

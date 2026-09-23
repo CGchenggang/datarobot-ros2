@@ -1,0 +1,20 @@
+# ROS 2 编译产物与日志,不进版本库
+build/
+install/
+log/
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+
+# 手工备份文件(git 自带历史,不再需要)
+*.bak*
+*.backup
+*.working_backup
+*.before_*
+*.tar.gz
+
+# tf2_tools view_frames 生成的调试产物
+frames_*.gv
+frames_*.pdf

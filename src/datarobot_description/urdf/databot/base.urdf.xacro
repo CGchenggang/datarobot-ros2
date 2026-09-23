@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" >
+    <!-- base_height: base_link 高出地面的高度, 由 datarobot.urdf.xacro 统一算出并传入
+         (= -wheel_z + wheel_radius). 地平面只在那一处决定, 从动轮等部件的 z
+         都相对它推导, 避免多处各写一份导致模型悬空或陷地 -->
+    <xacro:macro name="base_xacro" params="length radius base_height">
+        <!-- 地面投影坐标系, 整个模型的根.
+             里程计发布 odom -> base_footprint, 缺了它 TF 树会断成两截 -->
+        <link name="base_footprint"/>
+
+        <joint name="base_joint" type="fixed">
+            <parent link="base_footprint"/>
+            <child link="base_link"/>
+            <!-- 轮子底部即地面: base_link 高出地面 base_height -->
+            <origin xyz="0.0 0.0 ${base_height}" rpy="0.0 0.0 0.0"/>
+        </joint>
+
+        <!-- 机器人的身体部分 -->
+        <link name="base_link">
+            <!-- 部件的外观描述 -->
+            <visual>
+                <!-- 沿着自己几何中心的偏移和旋转量 -->
+                <origin xyz="0.0 0.0 0.716" rpy="0.0 0.0 0.0"/>
+                <!-- 几何形状 -->
+                <geometry>
+                    <!-- 圆柱体半径 高度 -->
+                    <cylinder radius="${radius}" length="${length}"/>
+                </geometry>
+                <!-- 颜色材质 -->
+                <material name="white">
+                    <color rgba="1.0 1.0 1.0 0.5"/>
+                </material>
+            </visual>
+
+            <!-- 碰撞体描述（用于 Gazebo 物理仿真）-->
+            <!-- 使用更矮的碰撞体来降低重心,避免倒地 -->
+            <collision>
+                <origin xyz="0.0 0.0 0.25" rpy="0.0 0.0 0.0"/>
+                <geometry>
+                    <cylinder radius="${radius}" length="0.5"/>
+                </geometry>
+            </collision>
+
+            <!-- 惯性参数（用于 Gazebo 物理仿真）-->
+            <inertial>
+                <!-- 重心位置设置在接近轮轴的位置 -->
+                <origin xyz="0.0 0.0 0.1" rpy="0.0 0.0 0.0"/>
+                <!-- 机器人本体质量约 50kg -->
+                <mass value="50.0"/>
+                <!-- 调整惯性矩阵以匹配更低的重心 -->
+                <inertia ixx="5.5" ixy="0.0" ixz="0.0"
+                         iyy="5.5" iyz="0.0"
+                         izz="1.96"/>
+            </inertial>
+        </link>
+    </xacro:macro>
+
+</robot>

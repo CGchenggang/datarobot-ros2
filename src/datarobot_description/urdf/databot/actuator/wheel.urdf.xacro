@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" >
+    <xacro:macro name="wheel_xacro" params="wheel_name xyz radius:=0.083">
+        <!-- 机器人的轮子 -->
+        <link name="${wheel_name}_link">
+            <!-- 部件的外观描述 -->
+            <visual>
+                <!-- 沿着自己几何中心的偏移和旋转量 -->
+                <origin xyz="0.0 0.0 0.0" rpy="1.57079 0.0 0.0"/>
+                <!-- 几何形状 -->
+                <geometry>
+                    <cylinder radius="${radius}" length="0.06"/>
+                </geometry>
+                <!-- 颜色材质 -->
+                <material name="wheel_blue">
+                    <color rgba="1.0 0.0 1.0 0.8"/>
+                </material>
+            </visual>
+
+            <!-- 碰撞体描述（用于 Gazebo 物理仿真）-->
+            <collision>
+                <origin xyz="0.0 0.0 0.0" rpy="1.57079 0.0 0.0"/>
+                <geometry>
+                    <cylinder radius="${radius}" length="0.06"/>
+                </geometry>
+            </collision>
+
+            <!-- 惯性参数（用于 Gazebo 物理仿真）-->
+            <inertial>
+                <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+                <!-- 单个轮子质量约 2kg -->
+                <mass value="2.0"/>
+                <!-- 圆柱体的惯性矩阵（绕Y轴旋转）-->
+                <!-- Ixx = Izz = (1/12)*m*(3*r^2 + h^2) -->
+                <!-- Iyy = (1/2)*m*r^2 -->
+                <inertia ixx="0.0156" ixy="0.0" ixz="0.0"
+                         iyy="0.0069" iyz="0.0"
+                         izz="0.0156"/>
+            </inertial>
+        </link>
+
+        <!-- 机器人的关节，用于组合机器人的部件 -->
+        <joint name="${wheel_name}_joint" type="continuous">
+            <parent link="base_link"/>
+            <child link="${wheel_name}_link"/>
+            <origin xyz="${xyz}" rpy="0.0 0.0 0.0"/>
+            <!-- 旋转方向 -->
+            <axis xyz="0 1 0"/>
+        </joint>
+    </xacro:macro>
+    
+</robot>

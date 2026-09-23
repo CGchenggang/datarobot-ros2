@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <!-- 从动轮宏定义.
+         关节 z 不接收实参, 由 caster_radius 和 base_height 推导:
+         球心离地 caster_radius 时球才触地, 而 base_link 离地 base_height,
+         故球心相对 base_link 的 z = caster_radius - base_height.
+         不把 z 暴露给调用方, 否则传错值会静默导致从动轮悬空或陷地. -->
+    <xacro:macro name="caster_xacro" params="caster_name xy caster_radius base_height">
+        <!-- 从动轮连杆 -->
+        <link name="${caster_name}_link">
+            <!-- 外观描述 -->
+            <visual>
+                <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+                <geometry>
+                    <sphere radius="${caster_radius}"/>
+                </geometry>
+                <material name="caster_black">
+                    <color rgba="0.2 0.2 0.2 1.0"/>
+                </material>
+            </visual>
+
+            <!-- 碰撞体描述 -->
+            <collision>
+                <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+                <geometry>
+                    <sphere radius="${caster_radius}"/>
+                </geometry>
+            </collision>
+
+            <!-- 惯性参数 -->
+            <xacro:property name="caster_mass" value="0.5"/>
+            <xacro:property name="caster_inertia" value="${0.4 * caster_mass * caster_radius * caster_radius}"/>
+            <inertial>
+                <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+                <mass value="${caster_mass}"/>
+                <!-- 球体的惯性矩阵: I = (2/5)*m*r^2 -->
+                <inertia ixx="${caster_inertia}" ixy="0.0" ixz="0.0"
+                         iyy="${caster_inertia}" iyz="0.0"
+                         izz="${caster_inertia}"/>
+            </inertial>
+        </link>
+
+        <!-- 从动轮关节 -->
+        <joint name="${caster_name}_joint" type="fixed">
+            <parent link="base_link"/>
+            <child link="${caster_name}_link"/>
+            <origin xyz="${xy} ${caster_radius - base_height}" rpy="0.0 0.0 0.0"/>
+        </joint>
+
+        <!-- Gazebo 从动轮摩擦力设置 -->
+        <gazebo reference="${caster_name}_link">
+            <!-- 低摩擦力,允许自由滚动 -->
+            <mu1>0.0</mu1>
+            <mu2>0.0</mu2>
+            <kp>1000000.0</kp>
+            <kd>10.0</kd>
+            <minDepth>0.001</minDepth>
+            <maxVel>10.0</maxVel>
+            <material>Gazebo/Black</material>
+        </gazebo>
+    </xacro:macro>
+</robot>

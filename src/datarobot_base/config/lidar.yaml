@@ -1,0 +1,46 @@
+bluesea_lidar:
+  ros__parameters:
+  #ROS2 相关#
+    frame_id: "laser_link"        # 激光雷达坐标系名称，与 URDF 中的 laser_link 对应
+    scan_topic: "scan"             # 发布的扫描数据话题名
+    cloud_topic: "cloud"           # 点云数据话题名（如果需要）
+
+  #数据处理#
+    dev_id: -1                     # 设备 ID（-1 表示自动）
+    raw_bytes: 3                   # 原始数据字节数
+    output_360: true               # 按帧输出（360度一圈）
+    output_scan: true              # 输出二维扫描数据（LaserScan 消息）
+    output_cloud2: false           # 输出三维点云数据（PointCloud2）
+
+    # 角度过滤
+    with_angle_filter: false       # 是否启用角度过滤
+    min_angle: -3.1415926          # 最小角度（弧度）
+    max_angle: 3.1415926           # 最大角度（弧度）
+
+    # 数据重采样
+    hard_resample: false           # 硬件重采样（需雷达支持）
+    soft_resample: false           # 软件重采样
+
+    # 数据处理选项
+    with_checksum: true            # 启用校验和
+    reversed: false                # 是否反转点云数据顺序
+    min_dist: 0.1                  # 最小有效距离（米）
+    max_dist: 50.0                 # 最大有效距离（米）
+
+    # 错误检测
+    error_circle: 3                # 连续多少圈用于错误判断
+    error_scale: 0.9               # 每圈距离为0的点占比超过此值则报错
+
+  #连接配置#
+    type: "uart"                   # 连接类型: uart(串口) / udp(网络) / vpc(虚拟串口)
+    port: "/dev/ttyUSB0"          # 串口设备路径（连接硬件后可能需要改为 /dev/ttyUSB1 等）
+    baud_rate: 1000000                  # 波特率（-1 表示自动检测）
+
+  #雷达设置#
+    uuid: -1                       # 雷达唯一标识（-1 表示不设置）
+    resample_res: -1.0             # 重采样分辨率（-1 表示不设置）
+    with_confidence: -1            # 是否包含置信度（-1 表示不设置）
+    with_smooth: -1                # 是否平滑（-1 表示不设置）
+    with_deshadow: -1              # 是否去阴影（-1 表示不设置）
+    alarm_msg: -1                  # 告警消息（-1 表示不设置）
+    rpm: -1                        # 转速（-1 表示不设置）

@@ -1,0 +1,32 @@
+# DataRobot Base Driver Configuration
+
+# Serial port settings
+serial_port: '/dev/ttyUSB0'
+baudrate: 115200
+slave_id: 1
+
+# Robot physical parameters
+wheel_radius: 0.083    # meters (8.3 cm)
+wheel_base: 0.358      # meters (35.8 cm)
+gear_ratio: 1.0        # motor_rpm / wheel_rpm
+max_rpm: 3000          # maximum motor RPM
+
+# Motor sign convention. The right motor is mirror-mounted, so forward motion
+# needs A positive and B negative. Flip these if a wheel spins the wrong way.
+invert_left: false     # negate A axis command
+invert_right: true     # negate B axis command
+
+# Control loop parameters
+# Each cycle costs two Modbus transactions (write speed + read speed), so the
+# rate is bounded by the serial link, not by CPU. 20 Hz is comfortable at
+# 115200 bps; raising it causes dropped responses.
+publish_rate: 20.0     # Hz
+cmd_vel_timeout: 1.0   # seconds - stop if no cmd_vel received
+
+# Frame IDs
+base_frame: 'base_footprint'
+odom_frame: 'odom'
+
+# Odometry covariance
+odom_pose_covariance_diagonal: [0.01, 0.01, 0.0, 0.0, 0.0, 0.05]
+odom_twist_covariance_diagonal: [0.01, 0.01, 0.0, 0.0, 0.0, 0.05]

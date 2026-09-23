@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="datarobot">
+    <xacro:macro name="base_link" params="length radius">
+        <!-- 机器人的身体部分 -->
+        <link name="base_link">
+            <!-- 部件的外观描述 -->
+            <visual>
+                <!-- 沿着自己几何中心的偏移和旋转量 -->
+                <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+                <!-- 几何形状 -->
+                <geometry>
+                    <!-- 圆柱体半径 高度 -->
+                    <cylinder radius="${radius}" length="${length}"/>
+                </geometry>
+                <!-- 颜色材质. material 必须带 name, 否则 urdf 解析器报错 -->
+                <material name="white">
+                    <color rgba="1.0 1.0 1.0 0.5"/>
+                </material>
+            </visual>
+        </link>
+    </xacro:macro>
+
+    <xacro:base_link  length="0.2" radius="0.5"/>
+</robot>

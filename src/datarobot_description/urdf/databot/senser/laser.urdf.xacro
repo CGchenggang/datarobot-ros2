@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" >
+    <xacro:macro name="laser_xacro" params="xyz">
+        <!-- 激光雷达 -->
+        <link name="laser_link">
+            <!-- 部件的外观描述 -->
+            <visual>
+                <!-- 沿着自己几何中心的偏移和旋转量 -->
+                <origin xyz="0.0 0.0 -0.01" rpy="0.0 0.0 0.0"/>
+                <!-- 几何形状 -->
+                <geometry>
+                    <cylinder radius="0.0275" length="0.055"/>
+                </geometry>
+                <!-- 颜色材质 -->
+                <material name="white">
+                    <color rgba="1.0 1.0 0.0 0.5"/>
+                </material>
+            </visual>
+
+            <!-- 碰撞体描述（用于 Gazebo 物理仿真）-->
+            <collision>
+                <origin xyz="0.0 0.0 -0.01" rpy="0.0 0.0 0.0"/>
+                <geometry>
+                    <cylinder radius="0.0275" length="0.055"/>
+                </geometry>
+            </collision>
+
+            <!-- 惯性参数（用于 Gazebo 物理仿真）-->
+            <inertial>
+                <origin xyz="0.0 0.0 -0.01" rpy="0.0 0.0 0.0"/>
+                <!-- 激光雷达质量约 0.5kg -->
+                <mass value="0.5"/>
+                <!-- 圆柱体的惯性矩阵 -->
+                <inertia ixx="0.0003" ixy="0.0" ixz="0.0"
+                         iyy="0.0003" iyz="0.0"
+                         izz="0.0002"/>
+            </inertial>
+        </link>
+
+        <!-- 机器人的关节，用于组合机器人的部件 -->
+        <joint name="laser_joint" type="fixed">
+            <parent link="base_link"/>
+            <child link="laser_link"/>
+            <!-- xyz 由调用方传入; 写成空串会让 urdf 解析器抛异常, robot_state_publisher 直接 abort -->
+            <origin xyz="${xyz}" rpy="0.0 0.0 0.0"/>
+        </joint>
+
+        <!-- Gazebo 激光雷达传感器.
+             不要加 <topic> 覆盖话题名: 启动文件里的桥接用的是 gz-sim 默认的
+             作用域名 .../laser_sensor/scan, 一旦指定 topic 桥接就订阅不到 -->
+        <gazebo reference="laser_link">
+            <sensor name="laser_sensor" type="gpu_lidar">
+                <pose>0 0 0 0 0 0</pose>
+                <visualize>true</visualize>
+                <update_rate>10</update_rate>
+                <lidar>
+                    <scan>
+                        <horizontal>
+                            <samples>360</samples>
+                            <resolution>1</resolution>
+                            <min_angle>0.0</min_angle>
+                            <max_angle>6.28318</max_angle>
+                        </horizontal>
+                    </scan>
+                    <range>
+                        <min>0.15</min>
+                        <max>12.0</max>
+                        <resolution>0.01</resolution>
+                    </range>
+                    <noise>
+                        <type>gaussian</type>
+                        <mean>0.0</mean>
+                        <stddev>0.01</stddev>
+                    </noise>
+                </lidar>
+                <always_on>1</always_on>
+            </sensor>
+        </gazebo>
+    </xacro:macro>
+    
+</robot>
