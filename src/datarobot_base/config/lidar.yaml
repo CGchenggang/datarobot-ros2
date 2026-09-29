@@ -33,8 +33,12 @@ bluesea_lidar:
 
   #连接配置#
     type: "uart"                   # 连接类型: uart(串口) / udp(网络) / vpc(虚拟串口)
-    port: "/dev/ttyUSB0"          # 串口设备路径（连接硬件后可能需要改为 /dev/ttyUSB1 等）
-    baud_rate: 1000000                  # 波特率（-1 表示自动检测）
+    port: "/dev/LHLiDAR"           # 串口设备路径
+                                   # 用 udev 固定名，不写 /dev/ttyUSB0 —— 那会和底盘抢设备，
+                                   # 且抢的时候不报错，只静默失灵。
+                                   # udev 模板见 bluesea2/script/LHLiDAR.rules 和 help.txt。
+                                   # 临时可用命令行的 lidar_port:=/dev/ttyUSB0 覆盖。
+    baud_rate: 1000000             # 波特率 ⚠️ 是 1M 不是 115200（-1 表示自动检测）
 
   #雷达设置#
     uuid: -1                       # 雷达唯一标识（-1 表示不设置）

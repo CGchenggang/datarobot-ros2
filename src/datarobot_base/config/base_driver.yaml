@@ -1,32 +1,64 @@
-# DataRobot Base Driver Configuration
+# DataRobot 底盘驱动参数
+#
+# ⚠️ 命名空间必须是 "base_driver"，即 launch 里 name='base_driver' 的节点名。
+#    ROS2 参数文件要求 <节点名>: ros__parameters: 两层外壳，缺了不会报错，
+#    但参数会静默失效 —— 这是之前 gear_ratio 标定"改了没效果"的原因。
+#
+# 加载方式：launch 文件里 parameters=[本文件, {launch 参数覆盖}]，
+# 列表靠后的覆盖靠前的，所以命令行传参（serial_port:= 等）始终优先。
 
-# Serial port settings
-serial_port: '/dev/ttyUSB0'
-baudrate: 115200
-slave_id: 1
+base_driver:
+  ros__parameters:
+    # ===== 串口 =====
+    # 用 udev 固定设备名，避免底盘和雷达在 /dev/ttyUSB* 上按插入顺序抢号
+    # （两个驱动抢同一个设备时不会报错，只会静默失灵）。
+    # 安装方法见 config/udev/99-datarobot.rules 和《实机接入指南》。
+    # 临时可用命令行的 serial_port:=/dev/ttyUSB1 覆盖。
+    serial_port: '/dev/datarobot_base'
+    baudrate: 115200
+    slave_id: 1
 
-# Robot physical parameters
-wheel_radius: 0.083    # meters (8.3 cm)
-wheel_base: 0.358      # meters (35.8 cm)
-gear_ratio: 1.0        # motor_rpm / wheel_rpm
-max_rpm: 3000          # maximum motor RPM
+    # ===== 车体物理参数 =====
+    wheel_radius: 0.083    # 轮半径（米）
+                           # ⚠️ 未复核。建议用卡尺量直径后除以 2 ——
+                           # 注意 wheel_radius 和 gear_ratio 在里程计里只以
+                           # r/gear_ratio 的组合出现，两者不可区分，
+                           # 所以轮径必须独立测量，不能靠标定去凑。
+    wheel_base: 0.358      # 轮距（米）
+                           # ✅ 已人工实测确认（2026-09-24）。早期文档写的 0.46 是错的。
+    gear_ratio: 1.0        # motor_rpm / wheel_rpm
+                           # ⚠️ 未标定。轮径用卡尺定死之后，再用"直线走 5m 比对
+                           # 里程计读数"反推，公式 gear_ratio = 里程计读数 / 实际距离。
+                           # 注意：开环里程计下此值会随负载/电池电压漂移，
+                           # 想更稳就开 read_actual_speed。
+    max_rpm: 3000
 
-# Motor sign convention. The right motor is mirror-mounted, so forward motion
-# needs A positive and B negative. Flip these if a wheel spins the wrong way.
-invert_left: false     # negate A axis command
-invert_right: true     # negate B axis command
+    # ===== 电机符号约定 =====
+    # 右电机（B 轴）镜像安装，前进需要 A 正 B 负，所以 invert_right 是 true。
+    # 这是正确的，只有亲眼看到轮子转反了才改。
+    invert_left: false     # 是否反转左（A 轴）指令
+    invert_right: true     # 是否反转右（B 轴）指令
 
-# Control loop parameters
-# Each cycle costs two Modbus transactions (write speed + read speed), so the
-# rate is bounded by the serial link, not by CPU. 20 Hz is comfortable at
-# 115200 bps; raising it causes dropped responses.
-publish_rate: 20.0     # Hz
-cmd_vel_timeout: 1.0   # seconds - stop if no cmd_vel received
+    # ===== 控制回路 =====
+    # 每个周期两次 Modbus 事务（写速度 + 读实际速度），瓶颈是串口不是 CPU。
+    # 实测：115200bps 下 20Hz 稳定，50Hz 会持续丢应答。
+    # 调低到 5Hz 会让里程计过于稀疏，SLAM 建图质量明显下降。
+    publish_rate: 20.0     # Hz
+    cmd_vel_timeout: 1.0   # 秒；超过此时长没收到 cmd_vel 就停车（安全保护，勿删）
 
-# Frame IDs
-base_frame: 'base_footprint'
-odom_frame: 'odom'
+    # 里程计的转速来源。
+    #   false（默认）= 只写模式：串口只发不读，里程计用**指令转速**开环推算。
+    #   true          = 读写模式：里程计用驱动器回报的**实际转速**，精度更高，
+    #                   但要求 RS485 收发切换可靠（历史上有丢应答问题，故默认关）。
+    # ⚠️ 曾经的 bug：只写模式下读到的是占位零值，却当成真实转速用，
+    #    导致电机照转但 /odom 恒停在原点、无法建图。已在驱动层修掉，
+    #    现在默认走指令转速开环，里程计能正常积累。
+    read_actual_speed: false
 
-# Odometry covariance
-odom_pose_covariance_diagonal: [0.01, 0.01, 0.0, 0.0, 0.0, 0.05]
-odom_twist_covariance_diagonal: [0.01, 0.01, 0.0, 0.0, 0.0, 0.05]
+    # ===== 坐标系名称（与其他节点约定，勿改） =====
+    base_frame: 'base_footprint'
+    odom_frame: 'odom'
+
+    # 注：里程计协方差目前在 base_driver_node.py 的 publish_odometry() 里写死，
+    # 不通过参数配置。原先此处有两个 *_covariance_diagonal 参数，代码从不读取，
+    # 已删除以避免"改了以为生效"的误导。

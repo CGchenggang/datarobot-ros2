@@ -14,6 +14,7 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import JointState
 from tf2_ros import TransformBroadcaster
 import math
+import os
 import time
 
 from datarobot_base.modbus_controller import ModbusController
@@ -27,7 +28,7 @@ class BaseDriverNode(Node):
         super().__init__('base_driver')
 
         # Declare parameters
-        self.declare_parameter('serial_port', '/dev/ttyUSB0')
+        self.declare_parameter('serial_port', '/dev/datarobot_base')
         self.declare_parameter('baudrate', 115200)
         self.declare_parameter('slave_id', 1)
         self.declare_parameter('wheel_radius', 0.083)  # meters
@@ -41,6 +42,11 @@ class BaseDriverNode(Node):
         self.declare_parameter('debug_modbus', False)  # Enable Modbus debug output
         self.declare_parameter('invert_left', False)   # Negate A axis command
         self.declare_parameter('invert_right', True)   # Negate B axis (mirror-mounted)
+        # 是否每周期回读驱动器回报的实际转速。
+        #   false（默认）= 只写模式：串口只发不读，里程计用**指令转速**开环推算。
+        #   true          = 读写模式：里程计用**实际转速**，精度更高，
+        #                   但要求 RS485 收发切换可靠（历史上有丢应答问题，故默认关）。
+        self.declare_parameter('read_actual_speed', False)
 
         # Get parameters
         serial_port = self.get_parameter('serial_port').value
@@ -57,6 +63,7 @@ class BaseDriverNode(Node):
         self.debug_modbus = self.get_parameter('debug_modbus').value
         invert_left = self.get_parameter('invert_left').value
         invert_right = self.get_parameter('invert_right').value
+        self.read_actual_speed = self.get_parameter('read_actual_speed').value
 
         # Initialize controllers
         self.modbus = ModbusController(serial_port, baudrate, slave_id, logger=self.get_logger())
@@ -64,14 +71,32 @@ class BaseDriverNode(Node):
                                               gear_ratio, max_rpm,
                                               invert_left, invert_right)
 
-        # Connect to hardware
+        # Connect to hardware.
+        # 设备不存在和打不开是两类问题，分开报错 —— 混在一起时最难排查的是
+        # "被另一个驱动占用"，因为那种情况不报错、只是静默失灵。
+        if not os.path.exists(serial_port):
+            self.get_logger().error(
+                f'串口设备 {serial_port} 不存在。'
+                f'若用的是 udev 固定名，先安装 config/udev/99-datarobot.rules '
+                f'并重新插拔；也可用 ls /dev/serial/by-id/ 或 ls /dev/ttyUSB* '
+                f'查看实际设备名，再用 serial_port:=<实际设备> 覆盖。')
+            raise RuntimeError(f'Serial device {serial_port} does not exist')
+
         if not self.modbus.connect():
-            self.get_logger().error(f'Failed to connect to {serial_port}')
+            self.get_logger().error(
+                f'串口 {serial_port} 存在但打开失败。'
+                f'常见原因：已被其他进程占用（另一个驱动打开了同一设备），'
+                f'用 fuser -v {serial_port} 或 lsof {serial_port} 查；'
+                f'或当前用户不在 dialout 组（sudo usermod -aG dialout $USER）。')
             raise RuntimeError('Cannot connect to motor controller')
 
         self.get_logger().info(f'Connected to motor controller on {serial_port}')
-        # Enable write-only mode (skip reading responses due to communication issues)
-        self.modbus.set_write_only(True)
+        # 不回读转速时启用只写模式（跳过读应答，规避 RS485 收发切换问题）
+        self.modbus.set_write_only(not self.read_actual_speed)
+        self.get_logger().info(
+            '里程计转速来源: ' +
+            ('驱动器实际转速' if self.read_actual_speed
+             else '指令转速（开环，设 read_actual_speed:=true 可切换）'))
 
         # Enable motors
         if self.modbus.enable_motors(True, debug=self.debug_modbus):
@@ -150,34 +175,42 @@ class BaseDriverNode(Node):
                 f'({self.write_fail} of {self.write_ok + self.write_fail} writes)',
                 throttle_duration_sec=5.0)
 
-        # Read actual speeds from motors
-        speeds = self.modbus.get_motor_speeds()
-        if speeds:
-            actual_left_rpm, actual_right_rpm = speeds
+        # 取用于里程计的轮速（驱动器符号约定）。
+        # 只写模式下读不到应答，只能退化成用**指令转速**做开环推算。
+        # 这不影响电机转动，只影响里程计精度（无负载/打滑补偿）。
+        odom_left_rpm, odom_right_rpm = left_rpm, right_rpm
+        if self.read_actual_speed:
+            speeds = self.modbus.get_motor_speeds()
+            if speeds:
+                odom_left_rpm, odom_right_rpm = speeds
+            else:
+                self.get_logger().warn(
+                    '回读实际转速失败，本周期退回指令转速',
+                    throttle_duration_sec=5.0)
 
-            # Update odometry
-            linear_vel, angular_vel = self.diff_drive.update_odometry(
-                actual_left_rpm, actual_right_rpm, dt)
+        # Update odometry
+        linear_vel, angular_vel = self.diff_drive.update_odometry(
+            odom_left_rpm, odom_right_rpm, dt)
 
-            # Get current pose
-            x, y, theta = self.diff_drive.get_pose()
+        # Get current pose
+        x, y, theta = self.diff_drive.get_pose()
 
-            # Update wheel angles for joint_states (visualization only).
-            # Use the wheel RPM in ROS convention that update_odometry stored,
-            # not the raw driver values, so the right wheel spins the right way.
-            left_wheel_omega = self.diff_drive.last_left_rpm * (2.0 * math.pi) / 60.0
-            right_wheel_omega = self.diff_drive.last_right_rpm * (2.0 * math.pi) / 60.0
-            self.left_wheel_angle += left_wheel_omega * dt
-            self.right_wheel_angle += right_wheel_omega * dt
+        # Update wheel angles for joint_states (visualization only).
+        # Use the wheel RPM in ROS convention that update_odometry stored,
+        # not the raw driver values, so the right wheel spins the right way.
+        left_wheel_omega = self.diff_drive.last_left_rpm * (2.0 * math.pi) / 60.0
+        right_wheel_omega = self.diff_drive.last_right_rpm * (2.0 * math.pi) / 60.0
+        self.left_wheel_angle += left_wheel_omega * dt
+        self.right_wheel_angle += right_wheel_omega * dt
 
-            # Publish odometry
-            self.publish_odometry(x, y, theta, linear_vel, angular_vel, current_time)
+        # Publish odometry
+        self.publish_odometry(x, y, theta, linear_vel, angular_vel, current_time)
 
-            # Publish TF
-            self.publish_tf(x, y, theta, current_time)
+        # Publish TF
+        self.publish_tf(x, y, theta, current_time)
 
-            # Publish joint states
-            self.publish_joint_states(current_time)
+        # Publish joint states
+        self.publish_joint_states(current_time)
 
     def publish_odometry(self, x: float, y: float, theta: float,
                         vx: float, vth: float, timestamp):

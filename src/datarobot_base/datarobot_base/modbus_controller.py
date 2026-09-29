@@ -31,13 +31,14 @@ class ModbusController:
     FUNC_DUAL_READ = 0x43
     FUNC_DUAL_WRITE = 0x44
 
-    def __init__(self, port: str = '/dev/ttyUSB0', baudrate: int = 115200,
+    def __init__(self, port: str = '/dev/datarobot_base', baudrate: int = 115200,
                  slave_id: int = 0x01, timeout: float = 0.1, logger=None):
         """
         Initialize Modbus controller.
 
         Args:
-            port: Serial port device
+            port: Serial port device（默认是 udev 固定名，见
+                config/udev/99-datarobot.rules）
             baudrate: Communication baudrate (default 115200)
             slave_id: Modbus slave ID (default 0x01)
             timeout: Serial timeout in seconds
@@ -114,12 +115,16 @@ class ModbusController:
 
                 self.serial.write(frame)
 
-                # Write-only mode: skip reading response entirely
+                # 只写模式：完全不读应答。
+                # ⚠️ 这里必须返回 None，不能返回占位缓冲。早期版本返回
+                # b'\x00' * expected_len，但该字节串是**真值**，调用方 dual_read()
+                # 会照常解析出 (0, 0)，看起来就像"电机转速为零"——
+                # 结果是 /odom 恒停在原点（电机照转，里程计不动）。
                 if self.write_only:
-                    time.sleep(0.01)  # 10ms delay to ensure command is sent
+                    time.sleep(0.01)  # 确保命令已发出
                     if debug and self.logger:
                         self.logger.info("Write-only mode: skipping response")
-                    return b'\x00' * expected_len  # Return dummy response
+                    return None
 
                 # Small delay for RS485 direction switching
                 time.sleep(0.005)  # 5ms
@@ -265,8 +270,12 @@ class ModbusController:
 
 
 if __name__ == '__main__':
-    # Test code
-    controller = ModbusController('/dev/ttyUSB0')
+    # 独立硬件自测（脱离 ROS2 直接验证串口通信和电机方向）。
+    #   python3 modbus_controller.py [串口设备]
+    # ⚠️ 跑之前务必把驱动轮架空。
+    import sys
+    port = sys.argv[1] if len(sys.argv) > 1 else '/dev/datarobot_base'
+    controller = ModbusController(port)
     if controller.connect():
         print("Connected to Modbus controller")
 

@@ -12,8 +12,10 @@ SLAM 建图启动文件
     # 基本启动
     ros2 launch datarobot_base slam.launch.py
 
-    # 指定串口设备
-    ros2 launch datarobot_base slam.launch.py serial_port:=/dev/ttyUSB1 lidar_port:=/dev/ttyUSB0
+    # 串口默认走 udev 固定名（/dev/datarobot_base、/dev/LHLiDAR），
+    # 若还没建 udev 规则，用命令行覆盖成实际设备：
+    ros2 launch datarobot_base slam.launch.py \
+      serial_port:=/dev/ttyUSB1 lidar_port:=/dev/ttyUSB0
 
 建图完成后保存地图：
     mkdir -p ~/maps
@@ -44,16 +46,18 @@ def generate_launch_description():
         description='使用仿真时间'
     )
 
+    # 端口默认值用 udev 固定名，不用按插入顺序分配的 /dev/ttyUSB*。
+    # 安装规则见 config/udev/99-datarobot.rules。
     serial_port_arg = DeclareLaunchArgument(
         'serial_port',
-        default_value='/dev/ttyUSB1',
-        description='底盘串口设备'
+        default_value='/dev/datarobot_base',
+        description='底盘串口设备（udev 固定名）'
     )
 
     lidar_port_arg = DeclareLaunchArgument(
         'lidar_port',
-        default_value='/dev/ttyUSB0',
-        description='激光雷达串口设备'
+        default_value='/dev/LHLiDAR',
+        description='激光雷达串口设备（udev 固定名）'
     )
 
     # 1. 启动底盘和雷达（不启动 RViz，用远程电脑查看）

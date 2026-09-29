@@ -42,8 +42,9 @@ def generate_launch_description():
     rviz_config_path = os.path.join(description_package_path, 'rviz',
                                     'datarobot.rviz')
 
-    # 底盘驱动配置文件（暂未使用，参数直接写在 launch 中）
-    # base_config_path = os.path.join(base_package_path, 'config', 'base_driver.yaml')
+    # 底盘驱动配置文件（车体参数、控制频率、电机方向都在这里）
+    base_config_path = os.path.join(base_package_path, 'config',
+                                    'base_driver.yaml')
 
     # 激光雷达配置文件
     lidar_config_path = os.path.join(base_package_path, 'config', 'lidar.yaml')
@@ -84,10 +85,12 @@ def generate_launch_description():
     )
 
     # 底盘串口设备路径
+    # 默认用 udev 固定名，不用 /dev/ttyUSB0：后者会和雷达按插入顺序抢设备，
+    # 而且抢的时候不报错。安装规则见 config/udev/99-datarobot.rules。
     serial_port_arg = DeclareLaunchArgument(
         'serial_port',
-        default_value='/dev/ttyUSB0',
-        description='底盘驱动器的串口设备路径'
+        default_value='/dev/datarobot_base',
+        description='底盘驱动器的串口设备路径（udev 固定名，见 config/udev/）'
     )
 
     # 底盘串口波特率
@@ -106,10 +109,20 @@ def generate_launch_description():
     )
 
     # 激光雷达串口设备路径
+    # 与底盘同理，用 udev 固定名；规则模板见 bluesea2/script/LHLiDAR.rules
     lidar_port_arg = DeclareLaunchArgument(
         'lidar_port',
-        default_value='/dev/ttyUSB0',
-        description='激光雷达的串口设备路径（通常与底盘不同）'
+        default_value='/dev/LHLiDAR',
+        description='激光雷达的串口设备路径（udev 固定名）'
+    )
+
+    # 里程计的转速来源（见 base_driver.yaml 的 read_actual_speed）
+    read_actual_speed_arg = DeclareLaunchArgument(
+        'read_actual_speed',
+        default_value='false',
+        choices=['true', 'false'],
+        description='true=用驱动器回报的实际转速算里程计；'
+                    'false=用指令转速开环推算（默认，只写模式）'
     )
 
     # ========== 机器人模型描述 ==========
@@ -127,30 +140,14 @@ def generate_launch_description():
         name='base_driver',
         output='screen',
         condition=IfCondition(LaunchConfiguration('base')),  # 仅当 base:=true 时启动
-        parameters=[{
+        # base_config_path 在前，命令行覆盖字典在后 —— 靠后的覆盖靠前的，
+        # 所以 serial_port:= 之类的命令行参数始终优先于 yaml 里的值。
+        parameters=[base_config_path, {
             'use_sim_time': LaunchConfiguration('use_sim_time'),
             'serial_port': LaunchConfiguration('serial_port'),
             'baudrate': LaunchConfiguration('baudrate'),
             'debug_modbus': LaunchConfiguration('debug_modbus'),
-
-            # 硬件参数
-            'slave_id': 1,              # Modbus 从站 ID
-            'wheel_radius': 0.083,      # 轮子半径（米）
-            'wheel_base': 0.358,        # 轮距（米）
-            'gear_ratio': 1.0,          # 齿轮比（未标定，见 ROADMAP.md）
-            'max_rpm': 3000,            # 最大转速
-
-            # 电机方向
-            'invert_left': False,       # 左轮是否反向
-            'invert_right': True,       # 右轮反向（镜像安装）
-
-            # 控制参数
-            'publish_rate': 5.0,       # 控制循环频率（Hz）
-            'cmd_vel_timeout': 1.0,     # 速度命令超时时间（秒）
-
-            # 坐标系名称
-            'base_frame': 'base_footprint',
-            'odom_frame': 'odom',
+            'read_actual_speed': LaunchConfiguration('read_actual_speed'),
         }]
     )
 
@@ -209,6 +206,7 @@ def generate_launch_description():
         baudrate_arg,
         debug_modbus_arg,
         lidar_port_arg,
+        read_actual_speed_arg,
 
         # 启动所有节点
         base_driver_node,

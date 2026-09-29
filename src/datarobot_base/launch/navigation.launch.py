@@ -13,7 +13,8 @@ Nav2 导航系统启动文件
     # 基本启动（需要先指定地图文件）
     ros2 launch datarobot_base navigation.launch.py map_file:=/home/admin/maps/my_map.yaml
 
-    # 指定串口设备
+    # 串口默认走 udev 固定名（/dev/datarobot_base、/dev/LHLiDAR），
+    # 若还没建 udev 规则，用命令行覆盖成实际设备：
     ros2 launch datarobot_base navigation.launch.py \
       map_file:=/home/admin/maps/my_map.yaml \
       serial_port:=/dev/ttyUSB1 \
@@ -75,16 +76,17 @@ def generate_launch_description():
         description='自动启动生命周期节点'
     )
 
+    # 端口默认值用 udev 固定名（见 config/udev/99-datarobot.rules）
     serial_port_arg = DeclareLaunchArgument(
         'serial_port',
-        default_value='/dev/ttyUSB1',
-        description='底盘串口设备'
+        default_value='/dev/datarobot_base',
+        description='底盘串口设备（udev 固定名）'
     )
 
     lidar_port_arg = DeclareLaunchArgument(
         'lidar_port',
-        default_value='/dev/ttyUSB0',
-        description='激光雷达串口设备'
+        default_value='/dev/LHLiDAR',
+        description='激光雷达串口设备（udev 固定名）'
     )
 
     use_composition_arg = DeclareLaunchArgument(

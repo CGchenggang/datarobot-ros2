@@ -20,10 +20,15 @@ def generate_launch_description():
     # Paths. Use the xacro model: the plain datarobot.urdf next to it is an
     # early single-link stub with no wheels and no base_footprint.
     description_package_path = get_package_share_path('datarobot_description')
+    base_package_path = get_package_share_path('datarobot_base')
     xacro_path = os.path.join(description_package_path, 'urdf', 'databot',
                               'datarobot.urdf.xacro')
     rviz_config_path = os.path.join(description_package_path, 'rviz',
                                     'datarobot.rviz')
+
+    # 底盘驱动配置文件（车体参数、控制频率、电机方向都在这里）
+    base_config_path = os.path.join(base_package_path, 'config',
+                                    'base_driver.yaml')
 
     # Launch arguments
     use_sim_time_arg = DeclareLaunchArgument(
@@ -35,8 +40,9 @@ def generate_launch_description():
 
     serial_port_arg = DeclareLaunchArgument(
         'serial_port',
-        default_value='/dev/ttyUSB0',
-        description='Serial port for Modbus communication'
+        default_value='/dev/datarobot_base',
+        description='Serial port for Modbus communication (udev fixed name, '
+                    'see config/udev/99-datarobot.rules)'
     )
 
     baudrate_arg = DeclareLaunchArgument(
@@ -69,22 +75,12 @@ def generate_launch_description():
         executable='base_driver_node.py',
         name='base_driver',
         output='screen',
-        parameters=[{
+        # base_config_path 在前，命令行覆盖字典在后 —— 靠后的覆盖靠前的。
+        parameters=[base_config_path, {
             'use_sim_time': LaunchConfiguration('use_sim_time'),
             'serial_port': LaunchConfiguration('serial_port'),
             'baudrate': LaunchConfiguration('baudrate'),
             'debug_modbus': LaunchConfiguration('debug_modbus'),
-            'slave_id': 1,
-            'wheel_radius': 0.083,
-            'wheel_base': 0.358,
-            'gear_ratio': 1.0,
-            'max_rpm': 3000,
-            'invert_left': False,
-            'invert_right': True,
-            'publish_rate': 20.0,
-            'cmd_vel_timeout': 1.0,
-            'base_frame': 'base_footprint',
-            'odom_frame': 'odom',
         }]
     )
 

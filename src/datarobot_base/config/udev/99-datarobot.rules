@@ -1,0 +1,64 @@
+# DataRobot 串口设备固定命名规则
+#
+# 目的：让底盘和激光雷达各自绑定一个**固定设备名**，
+#       不再依赖 /dev/ttyUSB0 / ttyUSB1 这种按插入顺序分配的编号。
+#
+# 为什么必须做这件事：
+#   两个驱动同时打开同一个设备时**不会报错**，只会静默失灵
+#   （表现为话题没数据、机器人不动），排查成本极高。
+#   固定命名让"插错口"变成一个立即报错的显式问题。
+#
+# ============================================================
+# 本机实测结论（2026-09-29，板子 admin@192.168.222.132）
+# ============================================================
+#   lsusb 显示**两个适配器是同一款芯片**：
+#     Bus 001 Device 004: ID 1a86:7523 QinHeng Electronics CH340 serial converter
+#     Bus 001 Device 005: ID 1a86:7523 QinHeng Electronics CH340 serial converter
+#
+#   ⚠️ 因此**不能只用 VID/PID** —— 两条只写 idVendor/idProduct 的规则会同时
+#      命中两个设备，产生"两个名字指向同一设备"或互相覆盖。
+#   而且这两个 CH340 **都没有序列号**（ATTRS{serial} 为空），
+#   所以方案 B（按序列号）也不可用。
+#
+#   只能用**方案 A：按物理 USB 端口（KERNELS）区分**。
+#
+#   实测物理映射（用 1 Mbps 被动读串口判定，谁在吐数据谁是雷达）：
+#     /dev/ttyUSB0  静默          → 底盘（Modbus 从站，不主动发数据）  端口 1-2.1
+#     /dev/ttyUSB1  持续吐数据     → 雷达（Bluesea 协议 00 01 e4 ...）  端口 1-2.3
+#
+#   ⚠️ 端口路径依赖**插在哪个 USB 口上**（这里是 Realtek 4 口 Hub 的 1 号、3 号口）。
+#      换了插口就必须重新查：
+#        udevadm info -a -n /dev/ttyUSB0 | grep -E 'KERNELS|idVendor|idProduct'
+#      以查到的 KERNELS=="1-2.x" 为准修改下面两行。
+#      KERNELS 是设备在 USB 拓扑上的位置，只要插口固定，名字就固定。
+#
+# ============================================================
+# 安装（在**板子上**执行，不是 Windows）
+# ============================================================
+#   cd ~/xuniceshi_ws
+#   sudo cp src/datarobot_base/config/udev/99-datarobot.rules /etc/udev/rules.d/
+#
+#   # ⚠️ 必须停用厂商自带的规则！见下方说明
+#   sudo mv /etc/udev/rules.d/99-bluesea-lidar.rules{,.disabled}
+#
+#   sudo udevadm control --reload-rules && sudo udevadm trigger
+#   ls -l /dev/datarobot_base /dev/LHLiDAR      # 确认两个符号链接
+#
+# ============================================================
+# ⚠️ 为什么要停用 /etc/udev/rules.d/99-bluesea-lidar.rules
+# ============================================================
+#   厂商模板（雷达包里的 script/LHLiDAR.rules 同款）只按 VID/PID 写，
+#   并且把 **CH340（1a86:7523）也列了进去**：
+#       KERNEL=="ttyUSB*", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", SYMLINK+="LHLiDAR"
+#   在本机（底盘和雷达都是 CH340）这条规则**会同时命中底盘适配器**，
+#   和本文件的 LHLiDAR 规则抢同一个名字。
+#   留着它的表现是：符号链接指向哪个设备变成"看谁最后被处理"，
+#   随时可能把雷达名指向底盘 —— 正是那个不报错的静默故障。
+
+# ---- 底盘驱动器（RS485 / Modbus RTU）----
+# CH340，插在 Hub 的 1 号口
+KERNEL=="ttyUSB*", KERNELS=="1-2.1", MODE:="0666", SYMLINK+="datarobot_base"
+
+# ---- 激光雷达（BlueSea LDS）----
+# CH340，插在 Hub 的 3 号口
+KERNEL=="ttyUSB*", KERNELS=="1-2.3", MODE:="0666", SYMLINK+="LHLiDAR"

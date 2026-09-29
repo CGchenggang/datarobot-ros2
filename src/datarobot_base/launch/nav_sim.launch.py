@@ -20,7 +20,7 @@
         orientation: {w: 1.0}}}}"
 
 与 navigation.launch.py 的区别：那个是给**实机**写的，会 include
-bringup_with_lidar.launch.py 去打开 /dev/ttyUSB1 和 /dev/ttyUSB0 启动底盘和雷达；
+bringup_with_lidar.launch.py 去打开 /dev/datarobot_base 和 /dev/LHLiDAR 启动底盘和雷达；
 仿真里跑它会去抢串口。本文件只起定位和导航栈。
 """
 
