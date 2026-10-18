@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- WSL mirrored 网络下 eth0 全 DOWN，UDP 组播/单播发现全灭。
+     本机仿真专用：FastDDS 纯共享内存传输，发现与数据全走 /dev/shm，与网卡无关。
+     用法: export FASTRTPS_DEFAULT_PROFILES_FILE=<本文件路径>
+     ⚠️ 仅适用于"ROS 与 Gazebo 全在同机"的场景（本工作区仿真验证正是如此） -->
+<profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS/Profiles">
+  <transport_descriptors>
+    <transport_descriptor>
+      <transport_id>shm_only</transport_id>
+      <type>SHM</type>
+    </transport_descriptor>
+  </transport_descriptors>
+  <participant profile_name="shm_only_profile" is_default_profile="true">
+    <rtps>
+      <userTransports>
+        <transport_id>shm_only</transport_id>
+      </userTransports>
+      <useBuiltinTransports>false</useBuiltinTransports>
+    </rtps>
+  </participant>
+</profiles>
