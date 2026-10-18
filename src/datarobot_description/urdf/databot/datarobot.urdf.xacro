@@ -1,11 +1,12 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="databot">
-<!-- 基础部分 -->
+<!-- 基础部分（含全局材质调色板） -->
 <xacro:include filename="$(find datarobot_description)/urdf/databot/base.urdf.xacro"/>
 <!-- 传感器部分 -->
 <xacro:include filename="$(find datarobot_description)/urdf/databot/senser/imu.urdf.xacro"/>
 <xacro:include filename="$(find datarobot_description)/urdf/databot/senser/camera.urdf.xacro"/>
 <xacro:include filename="$(find datarobot_description)/urdf/databot/senser/laser.urdf.xacro"/>
+<xacro:include filename="$(find datarobot_description)/urdf/databot/senser/ultrasonic.urdf.xacro"/>
 <!-- 执行器部分 -->
 <xacro:include filename="$(find datarobot_description)/urdf/databot/actuator/wheel.urdf.xacro"/>
 <xacro:include filename="$(find datarobot_description)/urdf/databot/actuator/caster.urdf.xacro"/>
@@ -26,9 +27,25 @@
 <xacro:property name="caster_radius" value="0.083"/>
 
 <xacro:base_xacro length="1.70" radius="0.28" base_height="${base_height}"/>
+
+<!-- IMU：装在车体中轴顶部内腔（实机对应主控板上方的 IMU 模块） -->
 <xacro:imu_xacro xyz="0.0 0.0 0.02"/>
-<xacro:camera_xacro xyz="0.0 0.0 1.566"/>
+
+<!-- 顶部云台相机：顶盖前沿，下俯 10°。camera_enabled:=false 可关掉传感器渲染省算力 -->
+<xacro:arg name="camera_enabled" default="true"/>
+<xacro:camera_xacro xyz="0.20 0.0 1.656" rpy="0.0 -0.17 0.0" enabled="$(arg camera_enabled)"/>
+
+<!-- 激光雷达：车头外伸支架上，x=0.30 在车体半径(0.28)之外，避免自遮挡 -->
 <xacro:laser_xacro xyz="0.30 0.0 0.0"/>
+
+<!-- 超声波 ×6：z=-0.13 → 离地约 0.12 m，专管激光盲区以下的低矮障碍
+     （车位挡轮杆、路缘等）。前 3 + 左右各 1 + 后 1，覆盖全向 -->
+<xacro:ultrasonic_xacro name="us_front"        xyz="0.283 0.0 -0.13"    yaw="0.0"/>
+<xacro:ultrasonic_xacro name="us_front_left"   xyz="0.20 0.20 -0.13"    yaw="0.7854"/>
+<xacro:ultrasonic_xacro name="us_front_right"  xyz="0.20 -0.20 -0.13"   yaw="-0.7854"/>
+<xacro:ultrasonic_xacro name="us_left"         xyz="0.0 0.283 -0.13"    yaw="1.5708"/>
+<xacro:ultrasonic_xacro name="us_right"        xyz="0.0 -0.283 -0.13"   yaw="-1.5708"/>
+<xacro:ultrasonic_xacro name="us_rear"         xyz="-0.283 0.0 -0.13"   yaw="3.14159"/>
 
 <xacro:wheel_xacro wheel_name="left_wheel"
                    xyz="0 0.179 ${wheel_z}" radius="${wheel_radius}"/>

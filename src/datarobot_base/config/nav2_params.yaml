@@ -125,7 +125,7 @@ controller_server:
       sim_time: 1.7
       linear_granularity: 0.05
       angular_granularity: 0.025
-      transform_tolerance: 0.2
+      transform_tolerance: 1.0
       xy_goal_tolerance: 0.10
       trans_stopped_velocity: 0.25
       short_circuit_trajectory_evaluation: true
@@ -159,8 +159,8 @@ local_costmap:
       plugins: ["voxel_layer", "inflation_layer"]
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 3.0
-        inflation_radius: 0.55
+        cost_scaling_factor: 4.0
+        inflation_radius: 0.45
       voxel_layer:
         plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: true
@@ -170,7 +170,9 @@ local_costmap:
         z_voxels: 16
         max_obstacle_height: 2.0
         mark_threshold: 0
-        observation_sources: scan
+        # 双源融合：scan(2D激光, 0.243m平面) + us_cloud(超声波点云, ~0.12m低矮障碍)
+        # 激光看不见 0.24m 以下的挡轮杆/绿化岛/路缘，超声波补盲
+        observation_sources: scan us_cloud
         scan:
           topic: /scan
           max_obstacle_height: 2.0
@@ -181,6 +183,19 @@ local_costmap:
           raytrace_min_range: 0.0
           obstacle_max_range: 2.5
           obstacle_min_range: 0.0
+        us_cloud:
+          topic: /us/cloud
+          data_type: "PointCloud2"
+          marking: true
+          clearing: false          # 单点测距不能用于清除，避免擦掉墙体
+          min_obstacle_height: 0.0
+          max_obstacle_height: 0.3  # 超声波装高 ~0.12m，只认低矮层
+          obstacle_max_range: 2.5
+          obstacle_min_range: 0.0
+          raytrace_max_range: 0.0
+          raytrace_min_range: 0.0
+          expected_update_rate: 2.0
+          observation_persistence: 0.5  # 单点易丢，短暂保持 0.5s
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: true
@@ -194,13 +209,21 @@ global_costmap:
       global_frame: map
       robot_base_frame: base_footprint
       use_sim_time: false
+      transform_tolerance: 1.0
       robot_radius: 0.25
       resolution: 0.05
       track_unknown_space: true
+      rolling_window: true
+      width: 30
+      height: 30
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: true
+        # 全局图只吃静态地图+激光（已知世界）。
+        # 实测教训：超声波单点标记进全局图后，旋转/时滞期间会把点涂成弧形
+        # 幻影墙（地图上障碍"发福"），直接污染长程规划；低矮障碍交给局部图
+        # 融合 + DWB 实时避障（us_cloud 见 local_costmap 段）。
         observation_sources: scan
         scan:
           topic: /scan
@@ -208,17 +231,17 @@ global_costmap:
           clearing: true
           marking: true
           data_type: "LaserScan"
-          raytrace_max_range: 3.0
+          raytrace_max_range: 12.0
           raytrace_min_range: 0.0
-          obstacle_max_range: 2.5
+          obstacle_max_range: 10.0
           obstacle_min_range: 0.0
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: true
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 3.0
-        inflation_radius: 0.55
+        cost_scaling_factor: 4.0
+        inflation_radius: 0.45
       always_send_full_costmap: true
 
 map_server:
@@ -324,7 +347,7 @@ collision_monitor:
     cmd_vel_in_topic: "cmd_vel_smoothed"
     cmd_vel_out_topic: "cmd_vel"
     state_topic: "collision_monitor_state"
-    transform_tolerance: 0.2
+    transform_tolerance: 1.0
     source_timeout: 1.0
     base_shift_correction: True
     stop_pub_timeout: 2.0

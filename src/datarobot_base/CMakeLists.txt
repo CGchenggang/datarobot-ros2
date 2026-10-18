@@ -16,7 +16,8 @@ ament_python_install_package(${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
   scripts/base_driver_node.py
-  scripts/fix_laser_frame.py
+  scripts/ultrasonic_node.py
+  scripts/waypoint_driver.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -29,6 +30,18 @@ install(DIRECTORY
 # Install config files
 install(DIRECTORY
   config
+  DESTINATION share/${PROJECT_NAME}/
+)
+
+# Install simulation worlds
+install(DIRECTORY
+  worlds
+  DESTINATION share/${PROJECT_NAME}/
+)
+
+# Install pre-built maps (随包导航地图：room / building 每层一张)
+install(DIRECTORY
+  maps
   DESTINATION share/${PROJECT_NAME}/
 )
 

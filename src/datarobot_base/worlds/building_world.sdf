@@ -1,0 +1,1159 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <world name="datarobot_building">
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <!-- 系统插件：Sensors(gpu_lidar/camera 渲染) + Imu(IMU 数据源，缺它 IMU 静默无数据) -->
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"></plugin>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"></plugin>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"></plugin>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"></plugin>
+
+    <!-- 环境光 + 无阴影平行光：两层楼都有均匀照明（阴影会让楼下全黑） -->
+    <ambient>0.45 0.45 0.48 1</ambient>
+    <light type="directional" name="sun">
+      <cast_shadows>false</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.3 0.2 -0.9</direction>
+    </light>
+
+    <!-- 室外大地 -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal><size>120 120</size></plane></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>120 120</size></plane></geometry>
+          <material><ambient>0.45 0.5 0.42 1</ambient><diffuse>0.45 0.5 0.42 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ============ 结构：地坪 + 楼板 ============ -->
+    <model name="slab_ground">
+      <pose>0 0 -0.1 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>25.0 17.0 0.2</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>25.0 17.0 0.2</size></box>
+          </geometry>
+          <material>
+            <ambient>0.60 0.60 0.62 1</ambient>
+            <diffuse>0.60 0.60 0.62 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="slab_floor2">
+      <pose>0 0 3.35 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>24.48 16.48 0.3</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>24.48 16.48 0.3</size></box>
+          </geometry>
+          <material>
+            <ambient>0.72 0.72 0.74 1</ambient>
+            <diffuse>0.72 0.72 0.74 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ============ 一层外墙（h=3.2m，南墙留 3m 大门） ============ -->
+    <model name="wall_n_f1">
+      <pose>0 8.12 1.6 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>24.48 0.24 3.2</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>24.48 0.24 3.2</size></box>
+          </geometry>
+          <material>
+            <ambient>0.62 0.63 0.66 1</ambient>
+            <diffuse>0.62 0.63 0.66 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="wall_s_f1_left">
+      <pose>-6.87 -8.12 1.6 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>10.74 0.24 3.2</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>10.74 0.24 3.2</size></box>
+          </geometry>
+          <material>
+            <ambient>0.62 0.63 0.66 1</ambient>
+            <diffuse>0.62 0.63 0.66 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="wall_s_f1_right">
+      <pose>6.87 -8.12 1.6 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>10.74 0.24 3.2</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>10.74 0.24 3.2</size></box>
+          </geometry>
+          <material>
+            <ambient>0.62 0.63 0.66 1</ambient>
+            <diffuse>0.62 0.63 0.66 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="wall_e_f1">
+      <pose>12.12 0 1.6 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>0.24 16.48 3.2</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>0.24 16.48 3.2</size></box>
+          </geometry>
+          <material>
+            <ambient>0.62 0.63 0.66 1</ambient>
+            <diffuse>0.62 0.63 0.66 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="wall_w_f1">
+      <pose>-12.12 0 1.6 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>0.24 16.48 3.2</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>0.24 16.48 3.2</size></box>
+          </geometry>
+          <material>
+            <ambient>0.62 0.63 0.66 1</ambient>
+            <diffuse>0.62 0.63 0.66 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ============ 支撑柱 ×6（0~6.7m 贯通两层） ============ -->
+    <model name="column_m8_m4">
+      <pose>-8 -4 3.35 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <cylinder><radius>0.3</radius><length>6.7</length></cylinder>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <cylinder><radius>0.3</radius><length>6.7</length></cylinder>
+          </geometry>
+          <material>
+            <ambient>0.55 0.56 0.60 1</ambient>
+            <diffuse>0.55 0.56 0.60 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="column_m8_4">
+      <pose>-8 4 3.35 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <cylinder><radius>0.3</radius><length>6.7</length></cylinder>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <cylinder><radius>0.3</radius><length>6.7</length></cylinder>
+          </geometry>
+          <material>
+            <ambient>0.55 0.56 0.60 1</ambient>
+            <diffuse>0.55 0.56 0.60 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="column_0_m4">
+      <pose>0 -4 3.35 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <cylinder><radius>0.3</radius><length>6.7</length></cylinder>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <cylinder><radius>0.3</radius><length>6.7</length></cylinder>
+          </geometry>
+          <material>
+            <ambient>0.55 0.56 0.60 1</ambient>
+            <diffuse>0.55 0.56 0.60 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="column_0_4">
+      <pose>0 4 3.35 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <cylinder><radius>0.3</radius><length>6.7</length></cylinder>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <cylinder><radius>0.3</radius><length>6.7</length></cylinder>
+          </geometry>
+          <material>
+            <ambient>0.55 0.56 0.60 1</ambient>
+            <diffuse>0.55 0.56 0.60 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="column_8_m4">
+      <pose>8 -4 3.35 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <cylinder><radius>0.3</radius><length>6.7</length></cylinder>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <cylinder><radius>0.3</radius><length>6.7</length></cylinder>
+          </geometry>
+          <material>
+            <ambient>0.55 0.56 0.60 1</ambient>
+            <diffuse>0.55 0.56 0.60 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="column_8_4">
+      <pose>8 4 3.35 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <cylinder><radius>0.3</radius><length>6.7</length></cylinder>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <cylinder><radius>0.3</radius><length>6.7</length></cylinder>
+          </geometry>
+          <material>
+            <ambient>0.55 0.56 0.60 1</ambient>
+            <diffuse>0.55 0.56 0.60 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ============ 一层：警亭（东北）+ 西墙隔断（反对称特征） ============ -->
+    <model name="booth">
+      <pose>10 5.5 1.4 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>2.5 2.0 2.8</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>2.5 2.0 2.8</size></box>
+          </geometry>
+          <material>
+            <ambient>0.50 0.60 0.70 1</ambient>
+            <diffuse>0.50 0.60 0.70 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="wall_stub_f1">
+      <pose>-11.1 -6.0 1.6 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>2.0 0.2 3.2</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>2.0 0.2 3.2</size></box>
+          </geometry>
+          <material>
+            <ambient>0.70 0.55 0.35 1</ambient>
+            <diffuse>0.70 0.55 0.35 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ============ 静止汽车 ×8（平行车道两侧） ============ -->
+    <model name="car_a_m8p1">
+      <pose>-8.1 2.2 0 0 0 0.0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="body_collision">
+          <pose>0 0 0.475 0 0 0</pose>
+          <geometry><box><size>4.2 1.75 0.55</size></box></geometry>
+        </collision>
+        <collision name="cabin_collision">
+          <pose>-0.3 0 1.025 0 0 0</pose>
+          <geometry><box><size>2.2 1.6 0.55</size></box></geometry>
+        </collision>
+        <visual name="body">
+          <pose>0 0 0.475 0 0 0</pose>
+          <geometry><box><size>4.2 1.75 0.55</size></box></geometry>
+          <material>
+            <ambient>0.75 0.10 0.10 1</ambient>
+            <diffuse>0.75 0.10 0.10 1</diffuse>
+          </material>
+        </visual>
+        <visual name="cabin">
+          <pose>-0.3 0 1.025 0 0 0</pose>
+          <geometry><box><size>2.2 1.6 0.55</size></box></geometry>
+          <material>
+            <ambient>0.75 0.10 0.10 1</ambient>
+            <diffuse>0.75 0.10 0.10 1</diffuse>
+          </material>
+        </visual>
+        <visual name="wheel_1.35_0.8">
+          <pose>1.35 0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="wheel_1.35_-0.8">
+          <pose>1.35 -0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="wheel_-1.35_0.8">
+          <pose>-1.35 0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="wheel_-1.35_-0.8">
+          <pose>-1.35 -0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="windshield">
+          <pose>0.75 0 1.0 0 0 0</pose>
+          <geometry><box><size>0.7 1.5 0.45</size></box></geometry>
+          <material><ambient>0.15 0.20 0.28 1</ambient><diffuse>0.15 0.20 0.28 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="car_a_m2p7">
+      <pose>-2.7 2.2 0 0 0 0.0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="body_collision">
+          <pose>0 0 0.475 0 0 0</pose>
+          <geometry><box><size>4.2 1.75 0.55</size></box></geometry>
+        </collision>
+        <collision name="cabin_collision">
+          <pose>-0.3 0 1.025 0 0 0</pose>
+          <geometry><box><size>2.2 1.6 0.55</size></box></geometry>
+        </collision>
+        <visual name="body">
+          <pose>0 0 0.475 0 0 0</pose>
+          <geometry><box><size>4.2 1.75 0.55</size></box></geometry>
+          <material>
+            <ambient>0.15 0.30 0.70 1</ambient>
+            <diffuse>0.15 0.30 0.70 1</diffuse>
+          </material>
+        </visual>
+        <visual name="cabin">
+          <pose>-0.3 0 1.025 0 0 0</pose>
+          <geometry><box><size>2.2 1.6 0.55</size></box></geometry>
+          <material>
+            <ambient>0.15 0.30 0.70 1</ambient>
+            <diffuse>0.15 0.30 0.70 1</diffuse>
+          </material>
+        </visual>
+        <visual name="wheel_1.35_0.8">
+          <pose>1.35 0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="wheel_1.35_-0.8">
+          <pose>1.35 -0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="wheel_-1.35_0.8">
+          <pose>-1.35 0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="wheel_-1.35_-0.8">
+          <pose>-1.35 -0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="windshield">
+          <pose>0.75 0 1.0 0 0 0</pose>
+          <geometry><box><size>0.7 1.5 0.45</size></box></geometry>
+          <material><ambient>0.15 0.20 0.28 1</ambient><diffuse>0.15 0.20 0.28 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="car_a_2p7">
+      <pose>2.7 2.2 0 0 0 0.0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="body_collision">
+          <pose>0 0 0.475 0 0 0</pose>
+          <geometry><box><size>4.2 1.75 0.55</size></box></geometry>
+        </collision>
+        <collision name="cabin_collision">
+          <pose>-0.3 0 1.025 0 0 0</pose>
+          <geometry><box><size>2.2 1.6 0.55</size></box></geometry>
+        </collision>
+        <visual name="body">
+          <pose>0 0 0.475 0 0 0</pose>
+          <geometry><box><size>4.2 1.75 0.55</size></box></geometry>
+          <material>
+            <ambient>0.88 0.88 0.88 1</ambient>
+            <diffuse>0.88 0.88 0.88 1</diffuse>
+          </material>
+        </visual>
+        <visual name="cabin">
+          <pose>-0.3 0 1.025 0 0 0</pose>
+          <geometry><box><size>2.2 1.6 0.55</size></box></geometry>
+          <material>
+            <ambient>0.88 0.88 0.88 1</ambient>
+            <diffuse>0.88 0.88 0.88 1</diffuse>
+          </material>
+        </visual>
+        <visual name="wheel_1.35_0.8">
+          <pose>1.35 0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="wheel_1.35_-0.8">
+          <pose>1.35 -0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="wheel_-1.35_0.8">
+          <pose>-1.35 0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="wheel_-1.35_-0.8">
+          <pose>-1.35 -0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="windshield">
+          <pose>0.75 0 1.0 0 0 0</pose>
+          <geometry><box><size>0.7 1.5 0.45</size></box></geometry>
+          <material><ambient>0.15 0.20 0.28 1</ambient><diffuse>0.15 0.20 0.28 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="car_a_8p1">
+      <pose>8.1 2.2 0 0 0 0.0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="body_collision">
+          <pose>0 0 0.475 0 0 0</pose>
+          <geometry><box><size>4.2 1.75 0.55</size></box></geometry>
+        </collision>
+        <collision name="cabin_collision">
+          <pose>-0.3 0 1.025 0 0 0</pose>
+          <geometry><box><size>2.2 1.6 0.55</size></box></geometry>
+        </collision>
+        <visual name="body">
+          <pose>0 0 0.475 0 0 0</pose>
+          <geometry><box><size>4.2 1.75 0.55</size></box></geometry>
+          <material>
+            <ambient>0.12 0.12 0.14 1</ambient>
+            <diffuse>0.12 0.12 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="cabin">
+          <pose>-0.3 0 1.025 0 0 0</pose>
+          <geometry><box><size>2.2 1.6 0.55</size></box></geometry>
+          <material>
+            <ambient>0.12 0.12 0.14 1</ambient>
+            <diffuse>0.12 0.12 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="wheel_1.35_0.8">
+          <pose>1.35 0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="wheel_1.35_-0.8">
+          <pose>1.35 -0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="wheel_-1.35_0.8">
+          <pose>-1.35 0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="wheel_-1.35_-0.8">
+          <pose>-1.35 -0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="windshield">
+          <pose>0.75 0 1.0 0 0 0</pose>
+          <geometry><box><size>0.7 1.5 0.45</size></box></geometry>
+          <material><ambient>0.15 0.20 0.28 1</ambient><diffuse>0.15 0.20 0.28 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="car_b_m5p4">
+      <pose>-5.4 -2.2 0 0 0 3.14159</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="body_collision">
+          <pose>0 0 0.475 0 0 0</pose>
+          <geometry><box><size>4.2 1.75 0.55</size></box></geometry>
+        </collision>
+        <collision name="cabin_collision">
+          <pose>-0.3 0 1.025 0 0 0</pose>
+          <geometry><box><size>2.2 1.6 0.55</size></box></geometry>
+        </collision>
+        <visual name="body">
+          <pose>0 0 0.475 0 0 0</pose>
+          <geometry><box><size>4.2 1.75 0.55</size></box></geometry>
+          <material>
+            <ambient>0.55 0.55 0.58 1</ambient>
+            <diffuse>0.55 0.55 0.58 1</diffuse>
+          </material>
+        </visual>
+        <visual name="cabin">
+          <pose>-0.3 0 1.025 0 0 0</pose>
+          <geometry><box><size>2.2 1.6 0.55</size></box></geometry>
+          <material>
+            <ambient>0.55 0.55 0.58 1</ambient>
+            <diffuse>0.55 0.55 0.58 1</diffuse>
+          </material>
+        </visual>
+        <visual name="wheel_1.35_0.8">
+          <pose>1.35 0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="wheel_1.35_-0.8">
+          <pose>1.35 -0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="wheel_-1.35_0.8">
+          <pose>-1.35 0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="wheel_-1.35_-0.8">
+          <pose>-1.35 -0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="windshield">
+          <pose>0.75 0 1.0 0 0 0</pose>
+          <geometry><box><size>0.7 1.5 0.45</size></box></geometry>
+          <material><ambient>0.15 0.20 0.28 1</ambient><diffuse>0.15 0.20 0.28 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="car_b_0p0">
+      <pose>0.0 -2.2 0 0 0 3.14159</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="body_collision">
+          <pose>0 0 0.475 0 0 0</pose>
+          <geometry><box><size>4.2 1.75 0.55</size></box></geometry>
+        </collision>
+        <collision name="cabin_collision">
+          <pose>-0.3 0 1.025 0 0 0</pose>
+          <geometry><box><size>2.2 1.6 0.55</size></box></geometry>
+        </collision>
+        <visual name="body">
+          <pose>0 0 0.475 0 0 0</pose>
+          <geometry><box><size>4.2 1.75 0.55</size></box></geometry>
+          <material>
+            <ambient>0.15 0.45 0.25 1</ambient>
+            <diffuse>0.15 0.45 0.25 1</diffuse>
+          </material>
+        </visual>
+        <visual name="cabin">
+          <pose>-0.3 0 1.025 0 0 0</pose>
+          <geometry><box><size>2.2 1.6 0.55</size></box></geometry>
+          <material>
+            <ambient>0.15 0.45 0.25 1</ambient>
+            <diffuse>0.15 0.45 0.25 1</diffuse>
+          </material>
+        </visual>
+        <visual name="wheel_1.35_0.8">
+          <pose>1.35 0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="wheel_1.35_-0.8">
+          <pose>1.35 -0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="wheel_-1.35_0.8">
+          <pose>-1.35 0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="wheel_-1.35_-0.8">
+          <pose>-1.35 -0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="windshield">
+          <pose>0.75 0 1.0 0 0 0</pose>
+          <geometry><box><size>0.7 1.5 0.45</size></box></geometry>
+          <material><ambient>0.15 0.20 0.28 1</ambient><diffuse>0.15 0.20 0.28 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="car_b_5p4">
+      <pose>5.4 -2.2 0 0 0 3.14159</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="body_collision">
+          <pose>0 0 0.475 0 0 0</pose>
+          <geometry><box><size>4.2 1.75 0.55</size></box></geometry>
+        </collision>
+        <collision name="cabin_collision">
+          <pose>-0.3 0 1.025 0 0 0</pose>
+          <geometry><box><size>2.2 1.6 0.55</size></box></geometry>
+        </collision>
+        <visual name="body">
+          <pose>0 0 0.475 0 0 0</pose>
+          <geometry><box><size>4.2 1.75 0.55</size></box></geometry>
+          <material>
+            <ambient>0.80 0.65 0.10 1</ambient>
+            <diffuse>0.80 0.65 0.10 1</diffuse>
+          </material>
+        </visual>
+        <visual name="cabin">
+          <pose>-0.3 0 1.025 0 0 0</pose>
+          <geometry><box><size>2.2 1.6 0.55</size></box></geometry>
+          <material>
+            <ambient>0.80 0.65 0.10 1</ambient>
+            <diffuse>0.80 0.65 0.10 1</diffuse>
+          </material>
+        </visual>
+        <visual name="wheel_1.35_0.8">
+          <pose>1.35 0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="wheel_1.35_-0.8">
+          <pose>1.35 -0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="wheel_-1.35_0.8">
+          <pose>-1.35 0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="wheel_-1.35_-0.8">
+          <pose>-1.35 -0.8 0.32 0 1.5708 0</pose>
+            <geometry><cylinder><radius>0.32</radius><length>0.22</length></cylinder></geometry>
+            <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+        <visual name="windshield">
+          <pose>0.75 0 1.0 0 0 0</pose>
+          <geometry><box><size>0.7 1.5 0.45</size></box></geometry>
+          <material><ambient>0.15 0.20 0.28 1</ambient><diffuse>0.15 0.20 0.28 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ============ 低矮绿化岛 ×4（0.12m：激光盲区、超声波目标） ============ -->
+    <model name="island_m7">
+      <pose>-7 0 0.06 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>1.2 0.8 0.12</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>1.2 0.8 0.12</size></box>
+          </geometry>
+          <material>
+            <ambient>0.20 0.45 0.20 1</ambient>
+            <diffuse>0.20 0.45 0.20 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="island_7">
+      <pose>7 0 0.06 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>1.2 0.8 0.12</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>1.2 0.8 0.12</size></box>
+          </geometry>
+          <material>
+            <ambient>0.20 0.45 0.20 1</ambient>
+            <diffuse>0.20 0.45 0.20 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="island_m11">
+      <pose>-11 0 0.06 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>1.2 0.8 0.12</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>1.2 0.8 0.12</size></box>
+          </geometry>
+          <material>
+            <ambient>0.20 0.45 0.20 1</ambient>
+            <diffuse>0.20 0.45 0.20 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="island_11">
+      <pose>11 0 0.06 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>1.2 0.8 0.12</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>1.2 0.8 0.12</size></box>
+          </geometry>
+          <material>
+            <ambient>0.20 0.45 0.20 1</ambient>
+            <diffuse>0.20 0.45 0.20 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ============ 二层隔墙（h=3.1m：3.5~6.6m） ============ -->
+    <model name="wall_n_f2">
+      <pose>0 8.12 5.05 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>24.48 0.24 3.1</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>24.48 0.24 3.1</size></box>
+          </geometry>
+          <material>
+            <ambient>0.65 0.66 0.70 1</ambient>
+            <diffuse>0.65 0.66 0.70 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="wall_s_f2">
+      <pose>0 -8.12 5.05 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>24.48 0.24 3.1</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>24.48 0.24 3.1</size></box>
+          </geometry>
+          <material>
+            <ambient>0.65 0.66 0.70 1</ambient>
+            <diffuse>0.65 0.66 0.70 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="wall_e_f2">
+      <pose>12.12 0 5.05 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>0.24 16.48 3.1</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>0.24 16.48 3.1</size></box>
+          </geometry>
+          <material>
+            <ambient>0.65 0.66 0.70 1</ambient>
+            <diffuse>0.65 0.66 0.70 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="wall_w_f2">
+      <pose>-12.12 0 5.05 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>0.24 16.48 3.1</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>0.24 16.48 3.1</size></box>
+          </geometry>
+          <material>
+            <ambient>0.65 0.66 0.70 1</ambient>
+            <diffuse>0.65 0.66 0.70 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- 二层内隔断：y=0 两段（中央留 2m 门洞），y=±3 两段 -->
+    <model name="part_f2_y0_left">
+      <pose>-6 0 5.05 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>10.0 0.15 3.1</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>10.0 0.15 3.1</size></box>
+          </geometry>
+          <material>
+            <ambient>0.75 0.72 0.68 1</ambient>
+            <diffuse>0.75 0.72 0.68 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="part_f2_y0_right">
+      <pose>6 0 5.05 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>10.0 0.15 3.1</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>10.0 0.15 3.1</size></box>
+          </geometry>
+          <material>
+            <ambient>0.75 0.72 0.68 1</ambient>
+            <diffuse>0.75 0.72 0.68 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="part_f2_y3_left">
+      <pose>-6 3 5.05 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>8.0 0.15 3.1</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>8.0 0.15 3.1</size></box>
+          </geometry>
+          <material>
+            <ambient>0.75 0.72 0.68 1</ambient>
+            <diffuse>0.75 0.72 0.68 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="part_f2_y3_right">
+      <pose>6 -3 5.05 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>8.0 0.15 3.1</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>8.0 0.15 3.1</size></box>
+          </geometry>
+          <material>
+            <ambient>0.75 0.72 0.68 1</ambient>
+            <diffuse>0.75 0.72 0.68 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- 二层办公桌 ×6（0.75m 高，激光可见） -->
+    <model name="desk_0">
+      <pose>-6 1.5 3.875 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>1.4 0.7 0.75</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>1.4 0.7 0.75</size></box>
+          </geometry>
+          <material>
+            <ambient>0.55 0.40 0.25 1</ambient>
+            <diffuse>0.55 0.40 0.25 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="desk_1">
+      <pose>-6 -1.5 3.875 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>1.4 0.7 0.75</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>1.4 0.7 0.75</size></box>
+          </geometry>
+          <material>
+            <ambient>0.55 0.40 0.25 1</ambient>
+            <diffuse>0.55 0.40 0.25 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="desk_2">
+      <pose>6.5 1.5 3.875 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>1.4 0.7 0.75</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>1.4 0.7 0.75</size></box>
+          </geometry>
+          <material>
+            <ambient>0.55 0.40 0.25 1</ambient>
+            <diffuse>0.55 0.40 0.25 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="desk_3">
+      <pose>6 -1.5 3.875 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>1.4 0.7 0.75</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>1.4 0.7 0.75</size></box>
+          </geometry>
+          <material>
+            <ambient>0.55 0.40 0.25 1</ambient>
+            <diffuse>0.55 0.40 0.25 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="desk_4">
+      <pose>0 5.5 3.875 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>1.4 0.7 0.75</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>1.4 0.7 0.75</size></box>
+          </geometry>
+          <material>
+            <ambient>0.55 0.40 0.25 1</ambient>
+            <diffuse>0.55 0.40 0.25 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="desk_5">
+      <pose>0 -5.5 3.875 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>1.4 0.7 0.75</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>1.4 0.7 0.75</size></box>
+          </geometry>
+          <material>
+            <ambient>0.55 0.40 0.25 1</ambient>
+            <diffuse>0.55 0.40 0.25 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- 二层档案柜（西北角，反对称特征） -->
+    <model name="cabinet_f2">
+      <pose>-10.5 5.0 4.1 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box><size>1.0 0.5 1.2</size></box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box><size>1.0 0.5 1.2</size></box>
+          </geometry>
+          <material>
+            <ambient>0.45 0.50 0.42 1</ambient>
+            <diffuse>0.45 0.50 0.42 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>

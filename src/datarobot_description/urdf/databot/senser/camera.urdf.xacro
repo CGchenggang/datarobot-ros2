@@ -1,29 +1,58 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" >
-    <xacro:macro name="camera_xacro" params="xyz">
-        <!-- 顶端摄像头 -->
+    <xacro:macro name="camera_xacro" params="xyz rpy:='0 0 0' enabled:=true">
+        <!-- 顶端摄像头（云台造型：深灰舱体 + 银色镜头圈）-->
         <link name="camera_link">
-            <!-- 部件的外观描述 -->
-            <visual>
-                <!-- 沿着自己几何中心的偏移和旋转量 -->
+            <visual name="pod">
                 <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-                <!-- 几何形状 -->
                 <geometry>
-                    <box size="0.1 0.1 0.1"/>
+                    <box size="0.10 0.10 0.08"/>
                 </geometry>
-                <!-- 颜色材质 -->
-                <material name="camera_white">
-                    <color rgba="0.0 0.0 0.0 0.5"/>
-                </material>
+                <material name="mat_dark"/>
+            </visual>
+            <visual name="lens">
+                <origin xyz="0.055 0.0 0.0" rpy="0.0 1.57079 0.0"/>
+                <geometry>
+                    <cylinder radius="0.025" length="0.02"/>
+                </geometry>
+                <material name="mat_silver"/>
             </visual>
         </link>
 
-        <!-- 机器人的关节，用于组合机器人的部件 -->
+        <!-- 机器人的关节，用于组合机器人的部件。
+             rpy 支持俯仰（如 0 -0.17 0 = 下俯 10°），默认水平朝前 -->
         <joint name="camera_joint" type="fixed">
             <parent link="base_link"/>
             <child link="camera_link"/>
-            <origin xyz="${xyz}" rpy="0.0 0.0 0.0"/>
+            <origin xyz="${xyz}" rpy="${rpy}"/>
         </joint>
+
+        <!-- Gazebo 相机传感器：桥接后出 /camera/image_raw + /camera/camera_info。
+             不加 <topic>，用与雷达一致的 gz 默认作用域话题（启动文件按 world 名拼路径）。
+             enabled:=false 时不挂传感器（CPU 紧张的导航测试省一路渲染负载） -->
+        <xacro:if value="${enabled}">
+            <gazebo reference="camera_link">
+                <sensor name="camera_sensor" type="camera">
+                    <pose>0 0 0 0 0 0</pose>
+                    <always_on>1</always_on>
+                    <update_rate>5</update_rate>
+                    <visualize>false</visualize>
+                    <gz_frame_id>camera_link</gz_frame_id>
+                    <camera>
+                        <horizontal_fov>1.2</horizontal_fov>
+                        <image>
+                            <width>320</width>
+                            <height>240</height>
+                            <format>R8G8B8</format>
+                        </image>
+                        <clip>
+                            <near>0.05</near>
+                            <far>30</far>
+                        </clip>
+                    </camera>
+                </sensor>
+            </gazebo>
+        </xacro:if>
     </xacro:macro>
-    
+
 </robot>

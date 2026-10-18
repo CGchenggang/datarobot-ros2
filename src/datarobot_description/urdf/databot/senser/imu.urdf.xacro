@@ -1,21 +1,25 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" >
     <xacro:macro name="imu_xacro" params="xyz">
-        <!-- 机器人的imu部分 惯性测量传感器 -->
+        <!-- 机器人的IMU部分 惯性测量传感器 -->
         <link name="imu_link">
-            <!-- 部件的外观描述 -->
+            <!-- 外观：PCB 小模块 -->
             <visual>
-                <!-- 沿着自己几何中心的偏移和旋转量 -->
                 <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-                <!-- 几何形状 -->
                 <geometry>
                     <box size="0.02 0.02 0.02"/>
                 </geometry>
-                <!-- 颜色材质 -->
-                <material name="white">
-                    <color rgba="1.0 1.0 0.0 0.5"/>
-                </material>
+                <material name="mat_imu"/>
             </visual>
+
+            <!-- 惯性参数：传感器本体很轻，球体近似 -->
+            <inertial>
+                <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+                <mass value="0.02"/>
+                <inertia ixx="1e-06" ixy="0.0" ixz="0.0"
+                         iyy="1e-06" iyz="0.0"
+                         izz="1e-06"/>
+            </inertial>
         </link>
 
         <!-- 机器人的关节，用于组合机器人的部件 -->
@@ -24,6 +28,18 @@
             <child link="imu_link"/>
             <origin xyz="${xyz}" rpy="0.0 0.0 0.0"/>
         </joint>
+
+        <!-- Gazebo IMU 传感器插件（gz-sim-imu-system 需在 world 里加载）.
+             不加 <topic>：桥接用 gz-sim 默认作用域话题 .../imu_sensor/imu，两边名字一致不会断流。
+             <gz_frame_id> 让消息直接带 imu_link 坐标系，省掉 ROS 侧改 frame 的补丁节点 -->
+        <gazebo reference="imu_link">
+            <sensor name="imu_sensor" type="imu">
+                <always_on>1</always_on>
+                <update_rate>50</update_rate>
+                <visualize>false</visualize>
+                <gz_frame_id>imu_link</gz_frame_id>
+            </sensor>
+        </gazebo>
     </xacro:macro>
-    
+
 </robot>

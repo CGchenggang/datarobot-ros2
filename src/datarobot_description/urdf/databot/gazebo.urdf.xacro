@@ -54,10 +54,8 @@
             <maxVel>1.0</maxVel>
         </gazebo>
 
-        <!-- 为 base_link 设置材质颜色 -->
-        <gazebo reference="base_link">
-            <material>Gazebo/White</material>
-        </gazebo>
+        <!-- 车体材质不再用 <gazebo reference> 覆盖：
+             URDF 里的材质已改为不透明成品色，sdformat 转换会直接带进 gz 渲染 -->
     </xacro:macro>
 
     <!-- 关节状态发布插件 -->

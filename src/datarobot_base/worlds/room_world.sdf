@@ -7,13 +7,15 @@
       <real_time_factor>1.0</real_time_factor>
     </physics>
 
-    <!-- 必需的系统插件 -->
+    <!-- 必需的系统插件.
+         Sensors: gpu_lidar/相机 的渲染源; Imu: IMU 传感器数据源（缺了 IMU 话题静默无数据） -->
     <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"></plugin>
     <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"></plugin>
     <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"></plugin>
     <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
       <render_engine>ogre2</render_engine>
     </plugin>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"></plugin>
 
     <!-- 光照 -->
     <light type="directional" name="sun">
@@ -263,7 +265,7 @@
       </link>
     </model>
 
-    <!-- ===== 不对称特征：西墙内伸的隔断墙（2026-09-23 新增）=====
+    <!-- ===== 不对称特征：西墙内伸的隔断墙 =====
          原来的世界有 2 重对称：180° 旋转把 box1↔box2、cylinder1↔cylinder2（同形状），
          沿 y=x 镜像也重合。于是 AMCL 的粒子滤波无法区分"在东北还是西南"，
          机器人移动中会跳到镜像象限（实测错了 6 米）。
@@ -289,6 +291,32 @@
           <material>
             <ambient>0.8 0.4 0.1 1</ambient>
             <diffuse>0.8 0.4 0.1 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ===== 超声波演示：低矮挡块（0.12m，激光盲区、超声波可见） ===== -->
+    <model name="low_block">
+      <pose>0.0 2.5 0.06 0 0 0</pose>
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>1.0 0.15 0.12</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>1.0 0.15 0.12</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.75 0.65 0.25 1</ambient>
+            <diffuse>0.75 0.65 0.25 1</diffuse>
           </material>
         </visual>
       </link>

@@ -1,5 +1,38 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" >
+    <!-- 全局材质调色板：所有子文件只按名字引用，颜色改这一处即可。
+         注意 alpha 全部为 1.0：半透明车体会让 Gazebo 里的渲染出现透视串面 -->
+    <material name="mat_body">
+        <color rgba="0.92 0.93 0.95 1.0"/>   <!-- 珠白车身 -->
+    </material>
+    <material name="mat_accent">
+        <color rgba="0.10 0.35 0.65 1.0"/>   <!-- 科技蓝饰环 -->
+    </material>
+    <material name="mat_dark">
+        <color rgba="0.16 0.17 0.20 1.0"/>   <!-- 深灰：裙边/顶盖/传感器舱 -->
+    </material>
+    <material name="mat_orange">
+        <color rgba="0.95 0.45 0.05 1.0"/>   <!-- 警示橙：顶部信标 -->
+    </material>
+    <material name="mat_panel">
+        <color rgba="0.08 0.08 0.09 1.0"/>   <!-- 前脸面板 -->
+    </material>
+    <material name="mat_silver">
+        <color rgba="0.75 0.76 0.78 1.0"/>   <!-- 轮毂/镜头圈 -->
+    </material>
+    <material name="mat_tire">
+        <color rgba="0.13 0.13 0.14 1.0"/>   <!-- 橡胶轮胎 -->
+    </material>
+    <material name="mat_lidar">
+        <color rgba="0.22 0.23 0.25 1.0"/>   <!-- 激光雷达 -->
+    </material>
+    <material name="mat_imu">
+        <color rgba="0.00 0.40 0.20 1.0"/>   <!-- IMU 模块 PCB 绿 -->
+    </material>
+    <material name="mat_us">
+        <color rgba="0.10 0.15 0.45 1.0"/>   <!-- 超声波模块 深蓝 -->
+    </material>
+
     <!-- base_height: base_link 高出地面的高度, 由 datarobot.urdf.xacro 统一算出并传入
          (= -wheel_z + wheel_radius). 地平面只在那一处决定, 从动轮等部件的 z
          都相对它推导, 避免多处各写一份导致模型悬空或陷地 -->
@@ -17,23 +50,73 @@
 
         <!-- 机器人的身体部分 -->
         <link name="base_link">
-            <!-- 部件的外观描述 -->
-            <visual>
-                <!-- 沿着自己几何中心的偏移和旋转量 -->
+            <!-- ===== 外观（美化版：白塔身 + 蓝饰环 + 深灰顶盖 + 橙色信标）===== -->
+            <!-- 主塔身：圆柱轮廓保持不变，碰撞/惯性在下方单独定义 -->
+            <visual name="body">
                 <origin xyz="0.0 0.0 0.716" rpy="0.0 0.0 0.0"/>
-                <!-- 几何形状 -->
                 <geometry>
-                    <!-- 圆柱体半径 高度 -->
                     <cylinder radius="${radius}" length="${length}"/>
                 </geometry>
-                <!-- 颜色材质 -->
-                <material name="white">
-                    <color rgba="1.0 1.0 1.0 0.5"/>
-                </material>
+                <material name="mat_body"/>
+            </visual>
+            <!-- 底部裙边：盖住轮舱接缝 -->
+            <visual name="skirt">
+                <origin xyz="0.0 0.0 0.02" rpy="0.0 0.0 0.0"/>
+                <geometry>
+                    <cylinder radius="${radius + 0.005}" length="0.12"/>
+                </geometry>
+                <material name="mat_dark"/>
+            </visual>
+            <!-- 上下两道蓝色饰环 -->
+            <visual name="ring_lower">
+                <origin xyz="0.0 0.0 0.55" rpy="0.0 0.0 0.0"/>
+                <geometry>
+                    <cylinder radius="${radius + 0.006}" length="0.05"/>
+                </geometry>
+                <material name="mat_accent"/>
+            </visual>
+            <visual name="ring_upper">
+                <origin xyz="0.0 0.0 1.30" rpy="0.0 0.0 0.0"/>
+                <geometry>
+                    <cylinder radius="${radius + 0.006}" length="0.05"/>
+                </geometry>
+                <material name="mat_accent"/>
+            </visual>
+            <!-- 前脸面板：标识车头方向 -->
+            <visual name="front_panel">
+                <origin xyz="${radius - 0.002} 0.0 0.95" rpy="0.0 0.0 0.0"/>
+                <geometry>
+                    <box size="0.024 0.30 0.45"/>
+                </geometry>
+                <material name="mat_panel"/>
+            </visual>
+            <!-- 顶盖 -->
+            <visual name="top_cap">
+                <origin xyz="0.0 0.0 ${length - 0.109}" rpy="0.0 0.0 0.0"/>
+                <geometry>
+                    <cylinder radius="${radius + 0.005}" length="0.05"/>
+                </geometry>
+                <material name="mat_dark"/>
+            </visual>
+            <!-- 顶部信标底座 + 灯 -->
+            <visual name="beacon_base">
+                <origin xyz="0.0 0.0 ${length - 0.0715}" rpy="0.0 0.0 0.0"/>
+                <geometry>
+                    <cylinder radius="0.09" length="0.025"/>
+                </geometry>
+                <material name="mat_dark"/>
+            </visual>
+            <visual name="beacon">
+                <origin xyz="0.0 0.0 ${length - 0.024}" rpy="0.0 0.0 0.0"/>
+                <geometry>
+                    <cylinder radius="0.045" length="0.07"/>
+                </geometry>
+                <material name="mat_orange"/>
             </visual>
 
             <!-- 碰撞体描述（用于 Gazebo 物理仿真）-->
-            <!-- 使用更矮的碰撞体来降低重心,避免倒地 -->
+            <!-- 使用更矮的碰撞体来降低重心,避免倒地.
+                 ⚠️ 碰撞几何是历史验证过的（重心/倾覆/雷达遮挡特性都依赖它），美化不动它 -->
             <collision>
                 <origin xyz="0.0 0.0 0.25" rpy="0.0 0.0 0.0"/>
                 <geometry>

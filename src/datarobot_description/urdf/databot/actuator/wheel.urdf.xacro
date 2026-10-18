@@ -1,20 +1,23 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" >
     <xacro:macro name="wheel_xacro" params="wheel_name xyz radius:=0.083">
-        <!-- 机器人的轮子 -->
+        <!-- 机器人的轮子：橡胶胎 + 银色轮毂 双层外观 -->
         <link name="${wheel_name}_link">
-            <!-- 部件的外观描述 -->
-            <visual>
-                <!-- 沿着自己几何中心的偏移和旋转量 -->
+            <!-- 外观：外胎 -->
+            <visual name="tire">
                 <origin xyz="0.0 0.0 0.0" rpy="1.57079 0.0 0.0"/>
-                <!-- 几何形状 -->
                 <geometry>
                     <cylinder radius="${radius}" length="0.06"/>
                 </geometry>
-                <!-- 颜色材质 -->
-                <material name="wheel_blue">
-                    <color rgba="1.0 0.0 1.0 0.8"/>
-                </material>
+                <material name="mat_tire"/>
+            </visual>
+            <!-- 外观：轮毂（比外胎略宽，从两侧都能看到银色盘面）-->
+            <visual name="hub">
+                <origin xyz="0.0 0.0 0.0" rpy="1.57079 0.0 0.0"/>
+                <geometry>
+                    <cylinder radius="${radius * 0.6}" length="0.064"/>
+                </geometry>
+                <material name="mat_silver"/>
             </visual>
 
             <!-- 碰撞体描述（用于 Gazebo 物理仿真）-->
@@ -48,5 +51,5 @@
             <axis xyz="0 1 0"/>
         </joint>
     </xacro:macro>
-    
+
 </robot>

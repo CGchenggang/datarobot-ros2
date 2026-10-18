@@ -25,10 +25,16 @@ SLAM 建图启动文件
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
+from launch.actions import (IncludeLaunchDescription, DeclareLaunchArgument,
+                            RegisterEventHandler, EmitEvent)
+from launch.event_handlers import OnProcessStart
+from launch.events import matches_action
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
-from launch_ros.actions import Node
+from launch_ros.actions import Node, LifecycleNode
+from launch_ros.events.lifecycle import ChangeState
+from launch_ros.event_handlers import OnStateTransition
+import lifecycle_msgs.msg
 
 
 def generate_launch_description():
@@ -77,8 +83,14 @@ def generate_launch_description():
         }.items()
     )
 
-    # 2. SLAM Toolbox 节点（异步模式，适合实时建图）
-    slam_toolbox_node = Node(
+    # 2. SLAM Toolbox 生命周期节点（异步模式，适合实时建图）
+    #
+    # ⚠️ 必须用 LifecycleNode + 自动 configure/activate。
+    #    直接用 Node 起的话，节点会停在 `unconfigured` 状态 ——
+    #    进程在、日志正常，但**既不处理扫描也不发布 /map**，
+    #    表现就是"RViz 里什么都没有"，而查进程、查话题名全都正常，极难定位。
+    #    （slam_sim.launch.py 里一直有这段逻辑，实机这份当初漏了。）
+    slam_toolbox_node = LifecycleNode(
         package='slam_toolbox',
         executable='async_slam_toolbox_node',
         name='slam_toolbox',
@@ -89,6 +101,37 @@ def generate_launch_description():
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
             }
         ],
+        namespace='',
+    )
+
+    # 节点启动后自动发送 configure
+    configure_event = EmitEvent(
+        event=ChangeState(
+            lifecycle_node_matcher=matches_action(slam_toolbox_node),
+            transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
+        )
+    )
+    slam_configure_handler = RegisterEventHandler(
+        OnProcessStart(
+            target_action=slam_toolbox_node,
+            on_start=[configure_event],
+        )
+    )
+
+    # configure 完成后自动发送 activate
+    activate_event = EmitEvent(
+        event=ChangeState(
+            lifecycle_node_matcher=matches_action(slam_toolbox_node),
+            transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE,
+        )
+    )
+    slam_activate_handler = RegisterEventHandler(
+        OnStateTransition(
+            target_lifecycle_node=slam_toolbox_node,
+            start_state='configuring',
+            goal_state='inactive',
+            entities=[activate_event],
+        )
     )
 
     return LaunchDescription([
@@ -100,4 +143,6 @@ def generate_launch_description():
         # 启动节点
         base_launch,
         slam_toolbox_node,
+        slam_configure_handler,
+        slam_activate_handler,
     ])

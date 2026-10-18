@@ -1,20 +1,23 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" >
     <xacro:macro name="laser_xacro" params="xyz">
-        <!-- 激光雷达 -->
+        <!-- 激光雷达：深灰筒身 + 支架 -->
         <link name="laser_link">
-            <!-- 部件的外观描述 -->
+            <!-- 外观：雷达本体 -->
             <visual>
-                <!-- 沿着自己几何中心的偏移和旋转量 -->
                 <origin xyz="0.0 0.0 -0.01" rpy="0.0 0.0 0.0"/>
-                <!-- 几何形状 -->
                 <geometry>
                     <cylinder radius="0.0275" length="0.055"/>
                 </geometry>
-                <!-- 颜色材质 -->
-                <material name="white">
-                    <color rgba="1.0 1.0 0.0 0.5"/>
-                </material>
+                <material name="mat_lidar"/>
+            </visual>
+            <!-- 外观：从车身表面伸出的支架 -->
+            <visual name="bracket">
+                <origin xyz="-0.045 0.0 -0.01" rpy="0.0 0.0 0.0"/>
+                <geometry>
+                    <box size="0.07 0.04 0.04"/>
+                </geometry>
+                <material name="mat_dark"/>
             </visual>
 
             <!-- 碰撞体描述（用于 Gazebo 物理仿真）-->
@@ -46,13 +49,16 @@
         </joint>
 
         <!-- Gazebo 激光雷达传感器.
-             不要加 <topic> 覆盖话题名: 启动文件里的桥接用的是 gz-sim 默认的
-             作用域名 .../laser_sensor/scan, 一旦指定 topic 桥接就订阅不到 -->
+             不要加 <topic> 覆盖话题名: 桥接用的是 gz-sim 默认的作用域名
+             .../laser_sensor/scan, 一旦指定 topic 桥接就订阅不到.
+             <gz_frame_id> 让 ROS 侧 LaserScan 直接带 laser_link 坐标系，
+             不再需要 frame 修正补丁节点 -->
         <gazebo reference="laser_link">
             <sensor name="laser_sensor" type="gpu_lidar">
                 <pose>0 0 0 0 0 0</pose>
                 <visualize>true</visualize>
                 <update_rate>10</update_rate>
+                <gz_frame_id>laser_link</gz_frame_id>
                 <lidar>
                     <scan>
                         <horizontal>
@@ -77,5 +83,5 @@
             </sensor>
         </gazebo>
     </xacro:macro>
-    
+
 </robot>

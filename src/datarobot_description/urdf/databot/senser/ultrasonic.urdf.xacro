@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" >
+    <!-- 超声波传感器宏（HC-SR04 形态：深蓝 PCB + 双探头）.
+         仿真实现：窄视场单线 gpu_lidar 模拟单回波测距，
+         ROS 侧由 ultrasonic_node 转成 sensor_msgs/Range（与实机驱动同接口）。
+         实机接入：HC-SR04 由单片机采集，串口上报，驱动节点同样发 /us/<name> 的 Range -->
+    <xacro:macro name="ultrasonic_xacro" params="name xyz yaw">
+        <link name="${name}_link">
+            <!-- 外观：模块盒体 -->
+            <visual name="pcb">
+                <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+                <geometry>
+                    <box size="0.025 0.045 0.02"/>
+                </geometry>
+                <material name="mat_us"/>
+            </visual>
+            <!-- 外观：双探头（沿 +x 朝外）-->
+            <visual name="eye_a">
+                <origin xyz="0.016 0.009 0.0" rpy="0.0 1.57079 0.0"/>
+                <geometry>
+                    <cylinder radius="0.008" length="0.012"/>
+                </geometry>
+                <material name="mat_silver"/>
+            </visual>
+            <visual name="eye_b">
+                <origin xyz="0.016 -0.009 0.0" rpy="0.0 1.57079 0.0"/>
+                <geometry>
+                    <cylinder radius="0.008" length="0.012"/>
+                </geometry>
+                <material name="mat_silver"/>
+            </visual>
+
+            <!-- 碰撞体（微小，避免与车身穿插即可）-->
+            <collision>
+                <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+                <geometry>
+                    <box size="0.025 0.045 0.02"/>
+                </geometry>
+            </collision>
+
+            <!-- 惯性参数 -->
+            <inertial>
+                <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+                <mass value="0.01"/>
+                <inertia ixx="1e-06" ixy="0.0" ixz="0.0"
+                         iyy="1e-06" iyz="0.0"
+                         izz="1e-06"/>
+            </inertial>
+        </link>
+
+        <!-- 固定在车身表面，yaw 决定朝向 -->
+        <joint name="${name}_joint" type="fixed">
+            <parent link="base_link"/>
+            <child link="${name}_link"/>
+            <origin xyz="${xyz}" rpy="0.0 0.0 ${yaw}"/>
+        </joint>
+
+        <!-- Gazebo 传感器：3 束窄视场 gpu_lidar 模拟 15° 锥形单回波.
+             ⚠️ samples 必须 ≥2：gpu_lidar 在 samples=1 时内部除零，射线会静默不发
+             （oomwoo-one 项目同款坑）。量程 0.03–4.0 m 对齐 HC-SR04；10 Hz 对齐实机节流 -->
+        <gazebo reference="${name}_link">
+            <sensor name="${name}" type="gpu_lidar">
+                <pose>0 0 0 0 0 0</pose>
+                <visualize>false</visualize>
+                <update_rate>10</update_rate>
+                <gz_frame_id>${name}_link</gz_frame_id>
+                <lidar>
+                    <scan>
+                        <horizontal>
+                            <samples>3</samples>
+                            <resolution>1</resolution>
+                            <min_angle>-0.13</min_angle>
+                            <max_angle>0.13</max_angle>
+                        </horizontal>
+                    </scan>
+                    <range>
+                        <min>0.03</min>
+                        <max>4.0</max>
+                        <resolution>0.01</resolution>
+                    </range>
+                    <noise>
+                        <type>gaussian</type>
+                        <mean>0.0</mean>
+                        <stddev>0.02</stddev>
+                    </noise>
+                </lidar>
+                <always_on>1</always_on>
+            </sensor>
+        </gazebo>
+    </xacro:macro>
+
+</robot>
